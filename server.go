@@ -2,7 +2,6 @@ package main
 
 import (
 	"clicker_api/routes"
-
 	"github.com/labstack/echo/v4"
 )
 
