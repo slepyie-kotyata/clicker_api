@@ -35,7 +35,7 @@ func Authentication(c echo.Context) error {
 
 func Registrate(c echo.Context) error {
 	email, password  := c.FormValue("email"), c.FormValue("password")
-	if email == " " || password == " " {
+	if (email == "" || password == "") {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"status": "2",
             "message": "not enough data",
