@@ -26,10 +26,12 @@ func Authentication(c echo.Context) error {
 	access_token := service.NewToken(user.ID, true)
 	refresh_token := service.NewToken(user.ID, false)
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"status": "0",
-		"access_token": access_token,
-		"refresh_token": refresh_token,
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": 0,
+		"tokens": map[string]string {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        },
 	})
 }
 
@@ -66,9 +68,11 @@ func Registrate(c echo.Context) error {
 	access_token := service.NewToken(new_user.ID, true)
 	refresh_token := service.NewToken(new_user.ID, false)
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"status": "0",
-		"access_token": access_token,
-		"refresh_token": refresh_token,
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": 0,
+		"tokens": map[string]string {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        },
 	})
 }
