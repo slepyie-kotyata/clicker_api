@@ -1,8 +1,12 @@
-FROM golang:1.24.1
-WORKDIR /clicker_api
+FROM golang:1.24.1 AS builder
+WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
-COPY ./ ./
-RUN CGO_ENABLED=1 GOOS=linux go build -o /clicker_api
+COPY . .
+RUN go build -o clicker_api server.go
+FROM ubuntu:latest
+WORKDIR /root/
+RUN apt update && apt install -y libc6
+COPY --from=builder /app/clicker_api .
 EXPOSE 1323
-CMD ["/clicker_api"]
+CMD ["./clicker_api"]
