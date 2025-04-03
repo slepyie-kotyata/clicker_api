@@ -6,6 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func InitGameRoutes(access *echo.Group) {
-	access.GET("/game/init", handlers.InitGame)
+func InitGameRoutes(game *echo.Group) {
+	game.GET("/init", handlers.InitGame)
 }
