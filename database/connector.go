@@ -34,6 +34,8 @@ func connectDB (db *gorm.DB, err error) *gorm.DB {
 	db.AutoMigrate(
 		&models.User{}, 
 		&models.Password{},
+		&models.Session{},
+		&models.Dish{},
 	)
 
 	db_connection = db

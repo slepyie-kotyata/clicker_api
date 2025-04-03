@@ -2,6 +2,7 @@ package service
 
 import (
 	"clicker_api/environment"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -42,8 +43,9 @@ func ParseToken(token string, secret string) (*jwt.Token, error) {
 	return parsed_token, err
 }
 
-func ExtractIDFromToken(token_string string, secret string) string {
-	token, _ := ParseToken(token_string, secret)
+func ExtractIDFromToken(header string, secret string) string {
+	header_parts := strings.Split(header, " ")
+	token, _ := ParseToken(header_parts[1], secret)
 
 	claims, _ := token.Claims.(jwt.MapClaims)
 

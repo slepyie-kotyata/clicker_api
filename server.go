@@ -18,6 +18,12 @@ func main() {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
 	}))
+
+	access := e.Group("/access")
+	access.Use(echojwt.WithConfig(echojwt.Config{
+		SigningKey: []byte(environment.GetVariable("ACCESS_TOKEN_SECRET")),
+	}))
+
 	refresh := e.Group("/refresh")
 	refresh.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(environment.GetVariable("REFRESH_TOKEN_SECRET")),
@@ -25,6 +31,7 @@ func main() {
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
+	routes.InitGameRoutes(access)
 
 	e.Start(":1323")
 
