@@ -8,5 +8,6 @@ FROM ubuntu:latest
 WORKDIR /root/
 RUN apt update && apt install -y libc6
 COPY --from=builder /app/clicker_api .
+COPY --from=builder /app/.env .env
 EXPOSE 1323
 CMD ["./clicker_api"]
