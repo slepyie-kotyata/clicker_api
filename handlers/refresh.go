@@ -4,14 +4,11 @@ import (
 	"clicker_api/environment"
 	"clicker_api/service"
 	"net/http"
-	"strings"
-
 	"github.com/labstack/echo/v4"
 )
 
-func RefreshTokens(c echo.Context) error {
-	header := strings.Split(c.Request().Header.Get("Authorization"), " ")
-	id := service.ExtractIDFromToken(header[1], environment.GetVariable("REFRESH_TOKEN_SECRET"))
+func RefreshTokens(c echo.Context) error {	
+	id := service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("REFRESH_TOKEN_SECRET"))
 
  	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
