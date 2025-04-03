@@ -7,7 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func NewToken(id uint, is_access bool) string {
+func NewToken(id string, is_access bool) string {
 	var (
 		secret string
 		duration time.Duration
@@ -35,4 +35,20 @@ func NewToken(id uint, is_access bool) string {
 	return signed_token
 }
 
+func ParseToken(token string, secret string) (*jwt.Token, error) {
+	parsed_token, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	return parsed_token, err
+}
+
+func ExtractIDFromToken(token_string string, secret string) string {
+	token, _ := ParseToken(token_string, secret)
+
+	claims, _ := token.Claims.(jwt.MapClaims)
+
+	id := claims["id"].(string)
+
+	return id
+}
 

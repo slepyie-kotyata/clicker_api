@@ -3,6 +3,7 @@ package handlers
 import (
 	"clicker_api/models"
 	"clicker_api/service"
+	"clicker_api/utils"
 	"net/http"
 	"strings"
 
@@ -23,8 +24,8 @@ func Authentication(c echo.Context) error {
 		})
 	}
 
-	access_token := service.NewToken(user.ID, true)
-	refresh_token := service.NewToken(user.ID, false)
+	access_token := service.NewToken(utils.IntToString(int(user.ID)), true)
+	refresh_token := service.NewToken(utils.IntToString(int(user.ID)), false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
@@ -65,8 +66,8 @@ func Registrate(c echo.Context) error {
 
 	db.Create(&new_user)
 
-	access_token := service.NewToken(new_user.ID, true)
-	refresh_token := service.NewToken(new_user.ID, false)
+	access_token := service.NewToken(utils.IntToString(int(user.ID)), true)
+	refresh_token := service.NewToken(utils.IntToString(int(user.ID)), false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
