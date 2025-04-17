@@ -29,9 +29,9 @@ func InitGame(c echo.Context) error {
 	db.Create(&new_session)
 
 	var first_upgrade models.Upgrade
-	db.Where("name = ?", "Гамбургер").First(&first_upgrade)
-
+	db.Preload("Boost").Where("name = ?", "Гамбургер").First(&first_upgrade)
 	db.Model(&new_session).Association("Upgrades").Append(&first_upgrade)
+	
 	db.Preload("Upgrades.Boost").First(&new_session, new_session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
