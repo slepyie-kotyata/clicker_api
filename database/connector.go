@@ -35,7 +35,8 @@ func connectDB (db *gorm.DB, err error) *gorm.DB {
 		&models.User{}, 
 		&models.Password{},
 		&models.Session{},
-		&models.Dish{},
+		&models.Upgrade{},
+		&models.Boost{},
 	)
 
 	db_connection = db
