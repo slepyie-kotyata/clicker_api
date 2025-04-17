@@ -5,5 +5,5 @@ type User struct {
 	Username string		`json:"username"`
 	Email    string		`json:"email"`
 	Password Password	`json:"-" gorm:"foreignKey:UserID"`
-	Session  Session    `json:"-"`
+	Session  Session    `json:"-" gorm:"foreignKey:UserID"`
 }
