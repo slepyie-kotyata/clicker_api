@@ -31,7 +31,7 @@ func InitGame(c echo.Context) error {
 	var first_upgrade models.Upgrade
 	db.Debug().Where("name = ?", "Гамбургер").First(&first_upgrade)
 
-	db.Debug().Model(&new_session).Association("Upgrades.Boost").Append(&first_upgrade)
+	db.Debug().Model(&new_session).Association("Upgrades").Append(&first_upgrade)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
