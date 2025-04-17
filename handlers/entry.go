@@ -23,7 +23,7 @@ func Authentication(c echo.Context) error {
             "message": "invalid user info",
 		})
 	}
-
+	
 	access_token := service.NewToken(utils.IntToString(int(user.ID)), true)
 	refresh_token := service.NewToken(utils.IntToString(int(user.ID)), false)
 
@@ -65,9 +65,9 @@ func Registrate(c echo.Context) error {
 	}
 
 	db.Create(&new_user)
-
-	access_token := service.NewToken(utils.IntToString(int(user.ID)), true)
-	refresh_token := service.NewToken(utils.IntToString(int(user.ID)), false)
+	
+	access_token := service.NewToken(utils.IntToString(int(new_user.ID)), true)
+	refresh_token := service.NewToken(utils.IntToString(int(new_user.ID)), false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
