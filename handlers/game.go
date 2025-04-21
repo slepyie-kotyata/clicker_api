@@ -30,7 +30,12 @@ func InitGame(c echo.Context) error {
 		UserID: id,
 	}
 	db.Create(&new_session)
-	db.Preload("Upgrades.Boost").Where("id = ?", id).First(&new_session)
+
+	var first_upgrade models.Upgrade
+	db.Preload("Boost").Where("icon_name = ?", "fisrt_dish").First(&first_upgrade)
+	db.Model(&new_session).Association("Upgrades").Append(&first_upgrade)
+
+	db.Preload("Upgrades.Boost").First(&new_session, new_session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
