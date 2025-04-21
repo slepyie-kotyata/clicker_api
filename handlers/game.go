@@ -10,12 +10,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
+
 func InitGame(c echo.Context) error {
-	id := service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET"))
-	new_id := utils.StringToUint(id)
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var session models.Session
-	db.Preload("Upgrades.Boost").Where("user_id = ?", new_id).First(&session)
+	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	if session.ID > 0 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": "0",
@@ -25,12 +26,54 @@ func InitGame(c echo.Context) error {
 
 	new_session := models.Session{
 		Money: 0,
-		UserID: new_id,
+		Dishes: 0,
+		UserID: id,
 	}
 	db.Create(&new_session)
+	db.Preload("Upgrades.Boost").Where("id = ?", id).First(&new_session)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"session": new_session,
+	})
+}
+
+func CookClick(c echo.Context) error {
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
+
+	var session models.Session
+	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+
+	if session.Upgrades == nil {
+		db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + 5})
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status": "0",
+			"dishes": session.Dishes,
+		})
+	}
+
+	var (
+		total_dishes_multiplier uint = 0;
+		total_dishes_per_click uint = 0;
+	)
+
+	for _, upgrade := range session.Upgrades {
+		if upgrade.Boost.BoostType == "dishes_multiplier" {
+			total_dishes_multiplier += upgrade.Boost.Value
+		}
+
+		if upgrade.Boost.BoostType == "total_dishes_per_click" {
+			total_dishes_per_click += upgrade.Boost.Value
+		}
+	}
+
+	if total_dishes_multiplier == 0 {
+		total_dishes_multiplier = 1
+	}
+
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (1 + total_dishes_per_click) * 5 * total_dishes_multiplier})
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": "0",
+		"dishes": session.Dishes,
 	})
 }
