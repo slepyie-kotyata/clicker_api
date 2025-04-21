@@ -45,10 +45,9 @@ func CookClick(c echo.Context) error {
 	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	if session.Upgrades == nil {
-		db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + 5})
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"status": "0",
-			"dishes": session.Dishes,
+		return c.JSON(http.StatusInsufficientStorage, map[string]string{
+			"status": "4",
+			"dishes": "no upgrades found",
 		})
 	}
 
@@ -58,11 +57,11 @@ func CookClick(c echo.Context) error {
 	)
 
 	for _, upgrade := range session.Upgrades {
-		if upgrade.Boost.BoostType == "dishes_multiplier" {
+		if upgrade.Boost.BoostType == "dM" {
 			total_dishes_multiplier += upgrade.Boost.Value
 		}
 
-		if upgrade.Boost.BoostType == "total_dishes_per_click" {
+		if upgrade.Boost.BoostType == "dPc" {
 			total_dishes_per_click += upgrade.Boost.Value
 		}
 	}
@@ -71,7 +70,7 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (1 + total_dishes_per_click) * 5 * total_dishes_multiplier})
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (total_dishes_per_click * 5 * total_dishes_multiplier)})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
