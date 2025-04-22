@@ -37,7 +37,10 @@ func connectDB (db *gorm.DB, err error) *gorm.DB {
 		&models.Session{},
 		&models.Upgrade{},
 		&models.Boost{},
+		&models.SessionUpgrade{},
 	)
+
+	_ = db.SetupJoinTable(&models.Session{}, "Upgrades", &models.SessionUpgrade{})
 
 	db_connection = db
 	return db_connection
