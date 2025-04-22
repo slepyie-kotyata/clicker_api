@@ -68,44 +68,36 @@ func InitGame(c echo.Context) error {
 	})
 }
 
-// func CookClick(c echo.Context) error {
-// 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
+func CookClick(c echo.Context) error {
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
 
-// 	var (
-// 		session models.Session
-// 		session_upgrade models.SessionUpgrade
-// 	)
-// 	db.Where("user_id = ?", id).First(&session)
+	var session models.Session
 
-// 	if session.Upgrades == nil {
-// 		return c.JSON(http.StatusInsufficientStorage, map[string]string{
-// 			"status": "4",
-// 			"dishes": "no upgrades found",
-// 		})
-// 	}
+	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	session.Upgrades = filterUpgrades(session)
 
-// 	var (
-// 		total_dishes_multiplier float32 = 0;
-// 		total_dishes_per_click float32 = 0;
-// 	)
+	var (
+		total_dishes_multiplier float32 = 0;
+		total_dishes_per_click float32 = 0;
+	)
 
-// 	for _, upgrade := range session.Upgrades {
-// 		if upgrade.Boost.BoostType == "dM" {
-// 			total_dishes_multiplier += upgrade.Boost.Value
-// 		}
+	for _, upgrade := range session.Upgrades {
+		if upgrade.Boost.BoostType == "dM" {
+			total_dishes_multiplier += upgrade.Boost.Value
+		}
 
-// 		if upgrade.Boost.BoostType == "dPc" {
-// 			total_dishes_per_click += upgrade.Boost.Value
-// 		}
-// 	}
+		if upgrade.Boost.BoostType == "dPc" {
+			total_dishes_per_click += upgrade.Boost.Value
+		}
+	}
 
-// 	if total_dishes_multiplier == 0 {
-// 		total_dishes_multiplier = 1
-// 	}
+	if total_dishes_multiplier == 0 {
+		total_dishes_multiplier = 1
+	}
 
-// 	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint((1 + total_dishes_per_click) * 5 * total_dishes_multiplier)})
-// 	return c.JSON(http.StatusOK, map[string]interface{}{
-// 		"status": "0",
-// 		"dishes": session.Dishes,
-// 	})
-// }
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint((1 + total_dishes_per_click) * 5 * total_dishes_multiplier)})
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": "0",
+		"dishes": session.Dishes,
+	})
+}

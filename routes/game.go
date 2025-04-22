@@ -8,5 +8,5 @@ import (
 
 func InitGameRoutes(game *echo.Group) {
 	game.GET("/init", handlers.InitGame)
-	// game.PATCH("/cook", handlers.CookClick)
+	game.PATCH("/cook", handlers.CookClick)
 }
