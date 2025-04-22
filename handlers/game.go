@@ -75,7 +75,7 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (total_dishes_per_click * 5 * total_dishes_multiplier)})
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (1 + total_dishes_per_click) * 5 * total_dishes_multiplier})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
