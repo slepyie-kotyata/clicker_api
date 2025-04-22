@@ -57,8 +57,8 @@ func CookClick(c echo.Context) error {
 	}
 
 	var (
-		total_dishes_multiplier uint = 0;
-		total_dishes_per_click uint = 0;
+		total_dishes_multiplier float32 = 0;
+		total_dishes_per_click float32 = 0;
 	)
 
 	for _, upgrade := range session.Upgrades {
@@ -75,7 +75,7 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + (1 + total_dishes_per_click) * 5 * total_dishes_multiplier})
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint((1 + total_dishes_per_click) * 5 * total_dishes_multiplier)})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
