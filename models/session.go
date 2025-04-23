@@ -5,5 +5,5 @@ type Session struct {
 	Money      uint			`json:"money"`
 	Dishes     uint         `json:"dishes"`
 	UserID     uint			`json:"user_id"`
-	Upgrades   []Upgrade    `gorm:"many2many:session_upgrades;"`
+	Upgrades   []Upgrade    `json:"upgrades" gorm:"many2many:session_upgrades;"`
 }

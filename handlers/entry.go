@@ -10,8 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-//TODO: jwt auth, refresh handler, password hashing\decoding
-
 func Authentication(c echo.Context) error {
 	email, password := c.FormValue("email"), c.FormValue("password")
 
