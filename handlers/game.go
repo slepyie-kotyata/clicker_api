@@ -101,3 +101,45 @@ func CookClick(c echo.Context) error {
 		"dishes": session.Dishes,
 	})
 }
+
+func SellClick(c echo.Context) error {
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
+
+	var session models.Session
+
+	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	session.Upgrades = filterUpgrades(session)
+
+	var (
+		total_money_multiplier float32 = 0;
+		total_money_per_click float32 = 0;
+	)
+
+	for _, upgrade := range session.Upgrades {
+		if upgrade.Boost.BoostType == "mM" {
+			total_money_multiplier += upgrade.Boost.Value
+		}
+
+		if upgrade.Boost.BoostType == "mPc" {
+			total_money_per_click += upgrade.Boost.Value
+		}
+	}
+
+	if total_money_multiplier == 0 {
+		total_money_multiplier = 1
+	}
+
+	if session.Dishes <= 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status": "2",
+			"message": "zero dishes",
+		})
+	}
+
+	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint((total_money_per_click) * 5 * total_money_multiplier)})
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": "0",
+		"dishes": session.Dishes,
+		"money": session.Money,
+	})
+}
