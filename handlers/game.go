@@ -70,6 +70,14 @@ func InitGame(c echo.Context) error {
 
 func CookClick(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	click_count := utils.StringToUint(c.FormValue("click_count"))
+
+	if click_count >= 10 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status": "3",
+			"message": "spam detected",
+		})
+	}
 
 	var session models.Session
 
@@ -81,7 +89,13 @@ func CookClick(c echo.Context) error {
 		total_dishes_per_click float32 = 0;
 	)
 
+	dish_exist := false
+
 	for _, upgrade := range session.Upgrades {
+		if upgrade.UpgradeType == "dish" && dish_exist == false  {
+			dish_exist = true
+		}
+
 		if upgrade.Boost.BoostType == "dM" {
 			total_dishes_multiplier += upgrade.Boost.Value
 		}
@@ -89,6 +103,13 @@ func CookClick(c echo.Context) error {
 		if upgrade.Boost.BoostType == "dPc" {
 			total_dishes_per_click += upgrade.Boost.Value
 		}
+	}
+
+	if dish_exist == false {
+		c.JSON(http.StatusForbidden, map[string]string{
+			"status": "5",
+			"message": "can't perform action",
+		})
 	}
 
 	if total_dishes_multiplier == 0 {
@@ -104,6 +125,14 @@ func CookClick(c echo.Context) error {
 
 func SellClick(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	click_count := utils.StringToUint(c.FormValue("click_count"))
+
+	if click_count >= 10 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status": "3",
+			"message": "spam detected",
+		})
+	}
 
 	var session models.Session
 
@@ -136,7 +165,7 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint((total_money_per_click) * 5 * total_money_multiplier)})
+	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 5, Money: session.Money + uint((total_money_per_click) * 5 * total_money_multiplier)})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
