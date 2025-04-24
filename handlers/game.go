@@ -69,7 +69,7 @@ func InitGame(c echo.Context) error {
 }
 
 func CookClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var session models.Session
 
@@ -103,7 +103,7 @@ func CookClick(c echo.Context) error {
 }
 
 func SellClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), environment.GetVariable("ACCESS_TOKEN_SECRET")))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var session models.Session
 
@@ -130,9 +130,9 @@ func SellClick(c echo.Context) error {
 	}
 
 	if session.Dishes <= 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"status": "2",
-			"message": "zero dishes",
+		return c.JSON(http.StatusConflict, map[string]string{
+			"status": "3",
+			"message": "not enough dishes",
 		})
 	}
 
@@ -141,5 +141,53 @@ func SellClick(c echo.Context) error {
 		"status": "0",
 		"dishes": session.Dishes,
 		"money": session.Money,
+	})
+}
+
+func BuyUpgrade(c echo.Context) error {
+	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	upgrade_id := c.Param("upgrade_id")
+
+	var (
+		session models.Session
+		this_upgrade = struct {
+			SessionID 	uint
+			UpgradeID 	uint
+			Price       uint
+			PriceFactor float32
+			TimesBought uint
+		}{}
+	)
+
+	db.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
+
+	//TODO: не проверяется на айдишник апргреда, исправить.
+	err := db.Table("upgrades").
+	Select("upgrades.price, upgrades.price_factor").
+	Joins("JOIN session_upgrades ON session_upgrades.upgrade_id = upgrades.id AND session_upgrades.upgrade_id = ?", utils.StringToUint(upgrade_id)).
+	Where("session_upgrades.session_id = ?", session.ID).Scan(&this_upgrade).Error
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"status": "4",
+			"message": "upgrade not found",
+		})
+	}
+
+	result_price := this_upgrade.Price * uint(this_upgrade.PriceFactor) * (this_upgrade.TimesBought + 1)
+
+	if session.Money - result_price <= 0 {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"status": "3",
+			"message": "not enough money",
+		})
+	}
+
+	db.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
+	db.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
+	
+	return c.JSON(http.StatusOK, map[string]string{
+		"status": "0",
+		"messange": "success",
 	})
 }
