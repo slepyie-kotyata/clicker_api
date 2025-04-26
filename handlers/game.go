@@ -13,8 +13,8 @@ import (
 )
 
 type ThisUpgrade struct {
-	Upgrade 	models.Upgrade
-	TimesBought uint
+	Upgrade 	models.Upgrade `json:"upgrade"`
+	TimesBought uint		   `json:"times_bought"`
 }
 
 var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
