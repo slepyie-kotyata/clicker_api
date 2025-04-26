@@ -19,8 +19,8 @@ type ThisUpgrade struct {
 
 var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
 
-func filterUpgrades(session models.Session, is_bought bool) []models.Upgrade {
-	filtered_upgrades := make([]models.Upgrade, 0)
+func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
+	filtered_upgrades := make([]ThisUpgrade, 0)
 
 	var session_upgrades []models.SessionUpgrade
 	db.Where("session_id = ?", session.ID).Find(&session_upgrades)
@@ -31,18 +31,24 @@ func filterUpgrades(session models.Session, is_bought bool) []models.Upgrade {
 	}
 
 	for _, upgrade := range session.Upgrades {
+		times_bought, ok := times_bought_map[upgrade.ID]
 		if is_bought {
-			times_bought, ok := times_bought_map[upgrade.ID]
 			if ok && times_bought > 0 {
-				filtered_upgrades = append(filtered_upgrades, upgrade)
+				filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
+					Upgrade: upgrade,
+					TimesBought: times_bought,
+				})
 			}
 		} else {
-			filtered_upgrades = append(filtered_upgrades, upgrade)	
+			filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
+				Upgrade: upgrade,
+				TimesBought: times_bought,
+			})	
 		}		
 	}
 
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
-		return filtered_upgrades[i].ID < filtered_upgrades[j].ID
+		return filtered_upgrades[i].Upgrade.ID < filtered_upgrades[j].Upgrade.ID
 	})
 
 	return filtered_upgrades 
@@ -58,10 +64,11 @@ func InitGame(c echo.Context) error {
 	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	if session.ID > 0 {
-		session.Upgrades = filterUpgrades(session, true)
+		filtered_upgrades := filterUpgrades(session, true)
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": "0",
 			"session": session,
+			"upgrades": filtered_upgrades,
 		})
 	}
 
@@ -85,11 +92,11 @@ func InitGame(c echo.Context) error {
 	}
 
 	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
-	new_session.Upgrades = filterUpgrades(new_session, true)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"session": new_session,
+		"upgrades": make([]ThisUpgrade, 0),
 	})
 }
 
@@ -107,7 +114,7 @@ func CookClick(c echo.Context) error {
 	var session models.Session
 
 	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
-	session.Upgrades = filterUpgrades(session, true)
+	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
 		total_dishes_multiplier float64 = 0;
@@ -116,17 +123,17 @@ func CookClick(c echo.Context) error {
 
 	dish_exist := false
 
-	for _, upgrade := range session.Upgrades {
-		if upgrade.UpgradeType == "dish" && dish_exist == false  {
+	for _, upgrade := range filtered_upgrades {
+		if upgrade.Upgrade.UpgradeType == "dish" && dish_exist == false  {
 			dish_exist = true
 		}
 
-		if upgrade.Boost.BoostType == "dM" {
-			total_dishes_multiplier += upgrade.Boost.Value
+		if upgrade.Upgrade.Boost.BoostType == "dM" {
+			total_dishes_multiplier += upgrade.Upgrade.Boost.Value
 		}
 
-		if upgrade.Boost.BoostType == "dPc" {
-			total_dishes_per_click += upgrade.Boost.Value
+		if upgrade.Upgrade.Boost.BoostType == "dPc" {
+			total_dishes_per_click += upgrade.Upgrade.Boost.Value
 		}
 	}
 
@@ -162,20 +169,20 @@ func SellClick(c echo.Context) error {
 	var session models.Session
 
 	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
-	session.Upgrades = filterUpgrades(session, true)
+	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
 		total_money_multiplier float64 = 0;
 		total_money_per_click float64 = 0;
 	)
 
-	for _, upgrade := range session.Upgrades {
-		if upgrade.Boost.BoostType == "mM" {
-			total_money_multiplier += upgrade.Boost.Value
+	for _, upgrade := range filtered_upgrades {
+		if upgrade.Upgrade.Boost.BoostType == "mM" {
+			total_money_multiplier += upgrade.Upgrade.Boost.Value
 		}
 
-		if upgrade.Boost.BoostType == "mPc" {
-			total_money_per_click += upgrade.Boost.Value
+		if upgrade.Upgrade.Boost.BoostType == "mPc" {
+			total_money_per_click += upgrade.Upgrade.Boost.Value
 		}
 	}
 
