@@ -72,7 +72,7 @@ func InitGame(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var session models.Session
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	if session.ID > 0 {
 		filtered_upgrades := filterUpgrades(session, true)
@@ -87,9 +87,14 @@ func InitGame(c echo.Context) error {
 		Money: 0,
 		Dishes: 0,
 		UserID: id,
+		Level: models.Level{
+			Rank: 0,
+			XP: 0,
+		},
 	}
 
 	db.Create(&new_session)
+	
 	var upgrades []models.Upgrade
 	db.Find(&upgrades)
 
@@ -102,7 +107,7 @@ func InitGame(c echo.Context) error {
 		db.Create(&session_upgrade)
 	}
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -265,9 +270,9 @@ func BuyUpgrade(c echo.Context) error {
 	db.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
 	db.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
 	
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
-		"message": "success",
+		"money": session.Money,
 	})
 }
 
