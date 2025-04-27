@@ -39,6 +39,7 @@ func connectDB (db *gorm.DB, err error) *gorm.DB {
 		&models.Boost{},
 		&models.SessionUpgrade{},
 		&models.LevelXP{},
+		&models.Level{},
 	)
 
 	_ = db.SetupJoinTable(&models.Session{}, "Upgrades", &models.SessionUpgrade{})
