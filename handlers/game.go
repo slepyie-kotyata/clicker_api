@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type ThisUpgrade struct {
@@ -87,14 +88,10 @@ func InitGame(c echo.Context) error {
 		Money: 0,
 		Dishes: 0,
 		UserID: id,
-		Level: models.Level{
-			Rank: 0,
-			XP: 0,
-		},
+		Level: &models.Level{},
 	}
+	db.Session(&gorm.Session{FullSaveAssociations:true}).Create(&new_session)
 
-	db.Create(&new_session)
-	
 	var upgrades []models.Upgrade
 	db.Find(&upgrades)
 
@@ -165,9 +162,12 @@ func CookClick(c echo.Context) error {
 	}
 
 	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * float64(click_count) * total_dishes_multiplier))})
+	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
+		"level": session.Level.XP,
 	})
 }
 
@@ -214,37 +214,36 @@ func SellClick(c echo.Context) error {
 	}
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - click_count, Money: session.Money + uint(math.Ceil((total_money_per_click) * float64(click_count) * total_money_multiplier))})
+	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money": session.Money,
+		"level": session.Level.XP,
 	})
 }
 
 func BuyUpgrade(c echo.Context) error {
 	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
-	upgrade_id := c.Param("upgrade_id")
+	upgrade_id := utils.StringToUint(c.Param("upgrade_id"))
 
 	var (
 		session models.Session
-		this_upgrade = struct {
-			SessionID 	uint
-			UpgradeID 	uint
-			Price       uint
-			PriceFactor float64
-			UpgradeType models.UpgradeType
-			TimesBought uint
-		}{}
+		this_upgrade ThisUpgrade
+		exist bool = false
 	)
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
 
-	query_result := db.Table("upgrades").
-	Select("upgrades.price, upgrades.price_factor, upgrades.upgrade_type, session_upgrades.times_bought").
-	Joins("JOIN session_upgrades ON session_upgrades.upgrade_id = upgrades.id AND session_upgrades.upgrade_id = ?", utils.StringToUint(upgrade_id)).
-	Where("session_upgrades.session_id = ?", session.ID).Scan(&this_upgrade)
+	for _, upgrade := range filterUpgrades(session, true){
+		if upgrade.ID == upgrade_id {
+			this_upgrade = upgrade
+			exist = true
+		}
+	}
 
-	if query_result.Error != nil || query_result.RowsAffected == 0 {
+	if !exist {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"status": "4",
 			"message": "upgrade not found",
