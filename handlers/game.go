@@ -45,6 +45,7 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 			ID: upgrade.ID,
 			Name: upgrade.Name,
 			IconName: upgrade.IconName,
+			UpgradeType: upgrade.UpgradeType,
 			PriceFactor: upgrade.PriceFactor,
 			Price: upgrade.Price,
 			AccessLevel: upgrade.AccessLevel,
@@ -90,7 +91,7 @@ func InitGame(c echo.Context) error {
 		UserID: id,
 		Level: &models.Level{},
 	}
-	db.Session(&gorm.Session{FullSaveAssociations:true}).Create(&new_session)
+	db.Create(&new_session)
 
 	var upgrades []models.Upgrade
 	db.Find(&upgrades)
