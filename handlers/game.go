@@ -40,7 +40,7 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 				})
 			}
 		} else {
-			if ok && (times_bought == 0 || times_bought > 1){
+			if ok && (times_bought == 0 || upgrade.UpgradeType != "dish"){
 			filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
 				Upgrade: upgrade,
 				TimesBought: times_bought,
