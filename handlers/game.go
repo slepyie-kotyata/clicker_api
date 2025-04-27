@@ -40,13 +40,14 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 				})
 			}
 		} else {
+			if ok && (times_bought == 0 || times_bought > 1){
 			filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
 				Upgrade: upgrade,
 				TimesBought: times_bought,
 			})	
 		}		
 	}
-
+}
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
 		return filtered_upgrades[i].Upgrade.ID < filtered_upgrades[j].Upgrade.ID
 	})
@@ -257,5 +258,20 @@ func BuyUpgrade(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"status": "0",
 		"message": "success",
+	})
+}
+
+func GetUpgrades(c echo.Context) error {
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+
+	var session models.Session
+	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+
+	filtered_upgrades := filterUpgrades(session, false)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": "0",
+		"session": session,
+		"upgrades": filtered_upgrades,
 	})
 }
