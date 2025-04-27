@@ -271,7 +271,6 @@ func GetUpgrades(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
-		"session": session,
 		"upgrades": filtered_upgrades,
 	})
 }
