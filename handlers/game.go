@@ -13,8 +13,15 @@ import (
 )
 
 type ThisUpgrade struct {
-	Upgrade 	models.Upgrade `json:"upgrade"`
-	TimesBought uint		   `json:"times_bought"`
+	ID             uint		       			`json:"id" gorm:"primary_key"`
+	Name           string		   			`json:"name"`
+	IconName       string		   			`json:"icon_name"`
+	UpgradeType    models.UpgradeType     	`json:"upgrade_type"`
+	PriceFactor    float64		   			`json:"price_factor"`
+	Price          uint			   			`json:"price"`
+	AccessLevel    uint			   			`json:"access_level"`
+	Boost          models.Boost    			`json:"boost"`
+	TimesBought    uint		   	   			`json:"times_bought"`
 }
 
 var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
@@ -32,31 +39,34 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 
 	for _, upgrade := range session.Upgrades {
 		times_bought, ok := times_bought_map[upgrade.ID]
+
+		this_upgrade := ThisUpgrade {
+			ID: upgrade.ID,
+			Name: upgrade.Name,
+			IconName: upgrade.IconName,
+			PriceFactor: upgrade.PriceFactor,
+			Price: upgrade.Price,
+			AccessLevel: upgrade.AccessLevel,
+			Boost: upgrade.Boost,
+			TimesBought: times_bought,
+		}
+
 		if is_bought {
 			if ok && times_bought > 0 {
-				filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
-					Upgrade: upgrade,
-					TimesBought: times_bought,
-				})
+				filtered_upgrades = append(filtered_upgrades, this_upgrade)
 			}
 		} else {
-			if ok && (times_bought == 0 || upgrade.UpgradeType != "dish"){
-			filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
-				Upgrade: upgrade,
-				TimesBought: times_bought,
-			})	
+			if ok && (times_bought == 0 || upgrade.UpgradeType != "dish") {
+			filtered_upgrades = append(filtered_upgrades, this_upgrade)	
 		}		
 	}
 }
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
-		return filtered_upgrades[i].Upgrade.ID < filtered_upgrades[j].Upgrade.ID
+		return filtered_upgrades[i].ID < filtered_upgrades[j].ID
 	})
 
 	return filtered_upgrades 
 }
-
-//TODO: ДОБАВИТЬ ПОЛЕ TIMES_BOUGHT
-
 
 func InitGame(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
@@ -125,16 +135,16 @@ func CookClick(c echo.Context) error {
 	dish_exist := false
 
 	for _, upgrade := range filtered_upgrades {
-		if upgrade.Upgrade.UpgradeType == "dish" && dish_exist == false  {
+		if upgrade.UpgradeType == "dish" && dish_exist == false  {
 			dish_exist = true
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "dM" {
-			total_dishes_multiplier += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "dM" {
+			total_dishes_multiplier += upgrade.Boost.Value
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "dPc" {
-			total_dishes_per_click += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "dPc" {
+			total_dishes_per_click += upgrade.Boost.Value
 		}
 	}
 
@@ -178,12 +188,12 @@ func SellClick(c echo.Context) error {
 	)
 
 	for _, upgrade := range filtered_upgrades {
-		if upgrade.Upgrade.Boost.BoostType == "mM" {
-			total_money_multiplier += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "mM" {
+			total_money_multiplier += upgrade.Boost.Value
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "mPc" {
-			total_money_per_click += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "mPc" {
+			total_money_per_click += upgrade.Boost.Value
 		}
 	}
 
