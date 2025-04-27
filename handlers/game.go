@@ -237,7 +237,7 @@ func BuyUpgrade(c echo.Context) error {
 
 	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
 
-	for _, upgrade := range filterUpgrades(session, true){
+	for _, upgrade := range filterUpgrades(session, false){
 		if upgrade.ID == upgrade_id {
 			this_upgrade = upgrade
 			exist = true
