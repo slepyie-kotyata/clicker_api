@@ -154,13 +154,11 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * float64(click_count) * total_dishes_multiplier))})
-	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * total_dishes_multiplier))})
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
-		"level": session.Level.XP,
 	})
 }
 
@@ -198,14 +196,14 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - click_count, Money: session.Money + uint(math.Ceil((total_money_per_click) * float64(click_count) * total_money_multiplier))})
-	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
+	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", 0.2))
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money": session.Money,
-		"level": session.Level.XP,
+		"xp": session.Level.XP,
 	})
 }
 
