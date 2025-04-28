@@ -198,7 +198,10 @@ func SellClick(c echo.Context) error {
 	new_xp := session.Level.XP + 0.2
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
-	db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp)
+	err := db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp).Error
+	if err != nil {
+		return err
+	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -244,7 +247,7 @@ func BuyUpgrade(c echo.Context) error {
 	if session.Money < result_price {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"status": "3",
-			"message": "not enough money",
+			"message": "not enough money, you have: " + utils.IntToString(int(session.Money)) + "you need: " + utils.IntToString(int(result_price)),
 		})
 	}
 
