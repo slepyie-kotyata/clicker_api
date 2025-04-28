@@ -103,14 +103,6 @@ func InitGame(c echo.Context) error {
 
 func CookClick(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
-	click_count := utils.StringToUint(c.FormValue("click_count"))
-
-	if click_count >= 10 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"status": "3",
-			"message": "spam detected",
-		})
-	}
 
 	var session models.Session
 
@@ -149,7 +141,7 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * float64(click_count) * total_dishes_multiplier))})
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * total_dishes_multiplier))})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
@@ -158,14 +150,6 @@ func CookClick(c echo.Context) error {
 
 func SellClick(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
-	click_count := utils.StringToUint(c.FormValue("click_count"))
-
-	if click_count >= 10 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"status": "3",
-			"message": "spam detected",
-		})
-	}
 
 	var session models.Session
 
@@ -198,7 +182,7 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - click_count, Money: session.Money + uint(math.Ceil((total_money_per_click) * float64(click_count) * total_money_multiplier))})
+	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
