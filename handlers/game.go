@@ -127,7 +127,7 @@ func CookClick(c echo.Context) error {
 
 	var session models.Session
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -185,7 +185,7 @@ func SellClick(c echo.Context) error {
 
 	var session models.Session
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -257,13 +257,6 @@ func BuyUpgrade(c echo.Context) error {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"status": "3",
 			"message": "not enough money",
-		})
-	}
-
-	if this_upgrade.UpgradeType == "dish" && this_upgrade.TimesBought == 1 {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"status": "3",
-			"message": "already bought",
 		})
 	}
 
