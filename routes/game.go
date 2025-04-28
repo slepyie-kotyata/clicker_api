@@ -12,4 +12,5 @@ func InitGameRoutes(game *echo.Group) {
 	game.PATCH("/sell", handlers.SellClick)
 	game.PATCH("/buy/:upgrade_id", handlers.BuyUpgrade)
 	game.GET("/upgrades", handlers.GetUpgrades)
+	game.GET("/levels", handlers.GetLevel)
 }
