@@ -135,11 +135,11 @@ func CookClick(c echo.Context) error {
 		}
 
 		if upgrade.Boost.BoostType == "dM" {
-			total_dishes_multiplier += upgrade.Boost.Value
+			total_dishes_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		}
 
 		if upgrade.Boost.BoostType == "dPc" {
-			total_dishes_per_click += upgrade.Boost.Value
+			total_dishes_per_click += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		}
 	}
 
@@ -166,7 +166,10 @@ func SellClick(c echo.Context) error {
 	log.Println("SellClick вызван")
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
-	var session models.Session
+	var (
+		session models.Session
+		level models.Level
+	)
 
 	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
@@ -178,7 +181,7 @@ func SellClick(c echo.Context) error {
 
 	for _, upgrade := range filtered_upgrades {
 		if upgrade.Boost.BoostType == "mM" {
-			total_money_multiplier += upgrade.Boost.Value
+			total_money_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		}
 
 		if upgrade.Boost.BoostType == "mPc" {
@@ -197,18 +200,16 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	new_xp := session.Level.XP + 0.2
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
-	result := db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp)
-	
-	log.Printf("Update XP result: rows affected=%d, error=%v\n", result.RowsAffected, result.Error)
+	db.Model(&level).Select("xp").Updates(models.Level{XP: level.XP + 0.2})
+
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money": session.Money,
-		"xp": new_xp,
+		"xp": level.XP,
 	})
 }
 
