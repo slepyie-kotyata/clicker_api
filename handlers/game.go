@@ -5,7 +5,6 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
-	"log"
 	"math"
 	"net/http"
 	"sort"
