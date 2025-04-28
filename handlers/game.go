@@ -10,7 +10,6 @@ import (
 	"sort"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type ThisUpgrade struct {
