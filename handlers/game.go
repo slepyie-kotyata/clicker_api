@@ -5,6 +5,7 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"log"
 	"math"
 	"net/http"
 	"sort"
@@ -198,9 +199,12 @@ func SellClick(c echo.Context) error {
 	new_xp := session.Level.XP + 0.2
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
-	err := db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp).Error
-	if err != nil {
-		return err
+	result := db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp)
+	if result.Error != nil {
+		log.Println("Ошибка при обновлении XP:", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		log.Println("Не найдена запись Level для данной сессии")
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
