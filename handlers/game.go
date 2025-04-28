@@ -10,11 +10,19 @@ import (
 	"sort"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type ThisUpgrade struct {
-	Upgrade 	models.Upgrade `json:"upgrade"`
-	TimesBought uint		   `json:"times_bought"`
+	ID             uint		       			`json:"id" gorm:"primary_key"`
+	Name           string		   			`json:"name"`
+	IconName       string		   			`json:"icon_name"`
+	UpgradeType    models.UpgradeType     	`json:"upgrade_type"`
+	PriceFactor    float64		   			`json:"price_factor"`
+	Price          uint			   			`json:"price"`
+	AccessLevel    uint			   			`json:"access_level"`
+	Boost          models.Boost    			`json:"boost"`
+	TimesBought    uint		   	   			`json:"times_bought"`
 }
 
 var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
@@ -32,37 +40,41 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 
 	for _, upgrade := range session.Upgrades {
 		times_bought, ok := times_bought_map[upgrade.ID]
+
+		this_upgrade := ThisUpgrade {
+			ID: upgrade.ID,
+			Name: upgrade.Name,
+			IconName: upgrade.IconName,
+			UpgradeType: upgrade.UpgradeType,
+			PriceFactor: upgrade.PriceFactor,
+			Price: upgrade.Price,
+			AccessLevel: upgrade.AccessLevel,
+			Boost: upgrade.Boost,
+			TimesBought: times_bought,
+		}
+
 		if is_bought {
 			if ok && times_bought > 0 {
-				filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
-					Upgrade: upgrade,
-					TimesBought: times_bought,
-				})
+				filtered_upgrades = append(filtered_upgrades, this_upgrade)
 			}
 		} else {
-			if ok && (times_bought == 0 || upgrade.UpgradeType != "dish"){
-			filtered_upgrades = append(filtered_upgrades, ThisUpgrade{
-				Upgrade: upgrade,
-				TimesBought: times_bought,
-			})	
+			if ok && (times_bought == 0 || upgrade.UpgradeType != "dish") {
+			filtered_upgrades = append(filtered_upgrades, this_upgrade)	
 		}		
 	}
 }
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
-		return filtered_upgrades[i].Upgrade.ID < filtered_upgrades[j].Upgrade.ID
+		return filtered_upgrades[i].ID < filtered_upgrades[j].ID
 	})
 
 	return filtered_upgrades 
 }
 
-//TODO: ДОБАВИТЬ ПОЛЕ TIMES_BOUGHT
-
-
 func InitGame(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var session models.Session
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	if session.ID > 0 {
 		filtered_upgrades := filterUpgrades(session, true)
@@ -77,9 +89,10 @@ func InitGame(c echo.Context) error {
 		Money: 0,
 		Dishes: 0,
 		UserID: id,
+		Level: &models.Level{},
 	}
-
 	db.Create(&new_session)
+
 	var upgrades []models.Upgrade
 	db.Find(&upgrades)
 
@@ -92,7 +105,7 @@ func InitGame(c echo.Context) error {
 		db.Create(&session_upgrade)
 	}
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -106,7 +119,7 @@ func CookClick(c echo.Context) error {
 
 	var session models.Session
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -117,16 +130,16 @@ func CookClick(c echo.Context) error {
 	dish_exist := false
 
 	for _, upgrade := range filtered_upgrades {
-		if upgrade.Upgrade.UpgradeType == "dish" && dish_exist == false  {
+		if upgrade.UpgradeType == "dish" && dish_exist == false  {
 			dish_exist = true
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "dM" {
-			total_dishes_multiplier += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "dM" {
+			total_dishes_multiplier += upgrade.Boost.Value
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "dPc" {
-			total_dishes_per_click += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "dPc" {
+			total_dishes_per_click += upgrade.Boost.Value
 		}
 	}
 
@@ -141,10 +154,13 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * total_dishes_multiplier))})
+	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1 + total_dishes_per_click) * float64(click_count) * total_dishes_multiplier))})
+	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
+		"level": session.Level.XP,
 	})
 }
 
@@ -153,7 +169,7 @@ func SellClick(c echo.Context) error {
 
 	var session models.Session
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -162,12 +178,12 @@ func SellClick(c echo.Context) error {
 	)
 
 	for _, upgrade := range filtered_upgrades {
-		if upgrade.Upgrade.Boost.BoostType == "mM" {
-			total_money_multiplier += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "mM" {
+			total_money_multiplier += upgrade.Boost.Value
 		}
 
-		if upgrade.Upgrade.Boost.BoostType == "mPc" {
-			total_money_per_click += upgrade.Upgrade.Boost.Value
+		if upgrade.Boost.BoostType == "mPc" {
+			total_money_per_click += upgrade.Boost.Value
 		}
 	}
 
@@ -182,38 +198,37 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
+	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - click_count, Money: session.Money + uint(math.Ceil((total_money_per_click) * float64(click_count) * total_money_multiplier))})
+	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", gorm.Expr("xp + ?", uint(math.Ceil(float64(click_count)*0.2))))
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money": session.Money,
+		"level": session.Level.XP,
 	})
 }
 
 func BuyUpgrade(c echo.Context) error {
 	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
-	upgrade_id := c.Param("upgrade_id")
+	upgrade_id := utils.StringToUint(c.Param("upgrade_id"))
 
 	var (
 		session models.Session
-		this_upgrade = struct {
-			SessionID 	uint
-			UpgradeID 	uint
-			Price       uint
-			PriceFactor float64
-			UpgradeType models.UpgradeType
-			TimesBought uint
-		}{}
+		this_upgrade ThisUpgrade
+		exist bool = false
 	)
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
+	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
 
-	query_result := db.Table("upgrades").
-	Select("upgrades.price, upgrades.price_factor, upgrades.upgrade_type, session_upgrades.times_bought").
-	Joins("JOIN session_upgrades ON session_upgrades.upgrade_id = upgrades.id AND session_upgrades.upgrade_id = ?", utils.StringToUint(upgrade_id)).
-	Where("session_upgrades.session_id = ?", session.ID).Scan(&this_upgrade)
+	for _, upgrade := range filterUpgrades(session, false){
+		if upgrade.ID == upgrade_id {
+			this_upgrade = upgrade
+			exist = true
+		}
+	}
 
-	if query_result.Error != nil || query_result.RowsAffected == 0 {
+	if !exist {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"status": "4",
 			"message": "upgrade not found",
@@ -229,19 +244,12 @@ func BuyUpgrade(c echo.Context) error {
 		})
 	}
 
-	if this_upgrade.UpgradeType == "dish" && this_upgrade.TimesBought == 1 {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"status": "3",
-			"message": "already bought",
-		})
-	}
-
 	db.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
 	db.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
 	
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
-		"message": "success",
+		"money": session.Money,
 	})
 }
 
