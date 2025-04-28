@@ -234,7 +234,12 @@ func BuyUpgrade(c echo.Context) error {
 		})
 	}
 
-	result_price := uint(math.Ceil(float64(this_upgrade.Price) * this_upgrade.PriceFactor * (float64(this_upgrade.TimesBought) + 1)))
+	times_bought := this_upgrade.TimesBought
+	if times_bought == 0 {
+		times_bought = 1
+	}
+
+	result_price := uint(math.Ceil(float64(this_upgrade.Price) * this_upgrade.PriceFactor * float64(times_bought)))
 
 	if session.Money < result_price {
 		return c.JSON(http.StatusConflict, map[string]string{
