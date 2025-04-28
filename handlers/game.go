@@ -163,7 +163,6 @@ func CookClick(c echo.Context) error {
 }
 
 func SellClick(c echo.Context) error {
-	log.Println("SellClick вызван")
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 
 	var (
