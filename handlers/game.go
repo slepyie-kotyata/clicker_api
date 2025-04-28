@@ -198,7 +198,7 @@ func SellClick(c echo.Context) error {
 	new_xp := session.Level.XP + 0.2
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click) * total_money_multiplier))})
-	db.Model(&models.Level{}).Where("session_id = ?", id).UpdateColumn("xp", new_xp)
+	db.Model(&models.Level{}).Where("session_id = ?", session.ID).UpdateColumn("xp", new_xp)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
