@@ -219,6 +219,7 @@ func BuyUpgrade(c echo.Context) error {
 		session models.Session
 		this_upgrade ThisUpgrade
 		exist bool = false
+		result_price uint = 0
 	)
 
 	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
@@ -237,12 +238,11 @@ func BuyUpgrade(c echo.Context) error {
 		})
 	}
 
-	times_bought := this_upgrade.TimesBought
-	if times_bought == 0 {
-		times_bought = 1
+	if this_upgrade.TimesBought == 0 {
+		result_price = this_upgrade.Price
+	} else {
+		result_price = uint(math.Ceil(float64(this_upgrade.Price) * this_upgrade.PriceFactor * float64(this_upgrade.TimesBought)))
 	}
-
-	result_price := uint(math.Ceil(float64(this_upgrade.Price) * this_upgrade.PriceFactor * float64(times_bought)))
 
 	if session.Money < result_price {
 		return c.JSON(http.StatusConflict, map[string]string{
