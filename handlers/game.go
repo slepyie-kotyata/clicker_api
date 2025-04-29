@@ -198,13 +198,14 @@ func SellClick(c echo.Context) error {
 	}
 
 	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click)*total_money_multiplier))})
-	db.Model(&models.Level{}).Where("session_id = ?", session.ID).Select("xp").Updates(map[string]interface{}{"xp": math.Round((session.Level.XP+0.2)*100) / 100})
+	new_xp := math.Round((session.Level.XP+0.2)*100) / 100
+	db.Model(&models.Level{}).Where("session_id = ?", session.ID).Select("xp").Updates(map[string]interface{}{"xp": new_xp})
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money":  session.Money,
-		"xp":     session.Level.XP,
+		"xp":     new_xp,
 	})
 }
 
