@@ -299,39 +299,41 @@ func GetLevel(c echo.Context) error {
 	})
 }
 
-//TODO: Ручка принимает в теле запроса текущий объект level, и возвращает обновленный объект level
-//Идет проверка на соответствие xp уровню.
-// - Если xp меньше чем нужно для увеличения уровня -> возвращает текущее значение без изменений
-// - Если xp ровно равен текущему значению для увеличения уровня -> возвращает новый уровень с 0 xp
-// - Если xp больше чем нужно для увеличения уровня -> возвращает новый уровень с xp равный размеру остатка
-
-
 func UpdateLevel(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
 	var (
 		level   models.Level
-		next_level models.Level
+		next_level models.LevelXP
 	)
 
 	db.Where("session_id = (?)", db.Model(&models.Session{}).Select("id").Where("user_id = ?", id),).First(&level)
 	db.Where("rank = ?", level.Rank + 1).First(&next_level)
 	
+	if next_level.ID == 0 {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"current_rank": level.Rank,
+			"current_xp":   level.XP,
+		})
+	}
+
 	if level.XP == float64(next_level.XP){
 		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": 0, "rank": level.Rank + 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			//если xp ровно равен текущему значению для увеличения уровня
+			"current_rank": level.Rank,
+			"current_xp": level.XP,
 		})
 	}
 
 	if level.XP > float64(next_level.XP) {
+		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round(level.XP - float64(next_level.XP)), "rank": level.Rank + 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			//если xp больше чем нужно для увеличения уровня
+			"current_rank": level.Rank,
+			"current_xp": level.XP,
 		})
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		//если xp меньше чем нужно для увеличения уровня
+		"current_rank": level.Rank,
+		"current_xp": level.XP,
 	})
 }
-
-//url для ручки /levels, метод PATCH
