@@ -325,7 +325,7 @@ func UpdateLevel(c echo.Context) error {
 	}
 
 	if level.XP > float64(next_level.XP) {
-		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round(level.XP - float64(next_level.XP)), "rank": level.Rank + 1})
+		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round((level.XP - float64(next_level.XP)) * 100) / 100, "rank": level.Rank + 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
