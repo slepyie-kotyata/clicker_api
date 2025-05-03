@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"clicker_api/environment"
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
@@ -24,13 +23,11 @@ type ThisUpgrade struct {
 	TimesBought    uint		   	   			`json:"times_bought"`
 }
 
-var secret string = environment.GetVariable("ACCESS_TOKEN_SECRET")
-
 func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 	filtered_upgrades := make([]ThisUpgrade, 0)
 
 	var session_upgrades []models.SessionUpgrade
-	db.Where("session_id = ?", session.ID).Find(&session_upgrades)
+	DB.Where("session_id = ?", session.ID).Find(&session_upgrades)
 
 	times_bought_map := make(map[uint]uint)
 	for _, su := range session_upgrades {
@@ -70,10 +67,10 @@ func filterUpgrades(session models.Session, is_bought bool) []ThisUpgrade {
 }
 
 func InitGame(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 
 	var session models.Session
-	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	if session.ID > 0 {
 		filtered_upgrades := filterUpgrades(session, true)
@@ -90,10 +87,10 @@ func InitGame(c echo.Context) error {
 		UserID: id,
 		Level: &models.Level{},
 	}
-	db.Create(&new_session)
+	DB.Create(&new_session)
 
 	var upgrades []models.Upgrade
-	db.Find(&upgrades)
+	DB.Find(&upgrades)
 
 	for _, upgrade := range upgrades {
 		session_upgrade := &models.SessionUpgrade{
@@ -101,10 +98,10 @@ func InitGame(c echo.Context) error {
 			UpgradeID: upgrade.ID,
 			TimesBought: 0,
 		}
-		db.Create(&session_upgrade)
+		DB.Create(&session_upgrade)
 	}
 
-	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
+	DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -114,11 +111,11 @@ func InitGame(c echo.Context) error {
 }
 
 func CookClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 
 	var session models.Session
 
-	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -153,7 +150,7 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	db.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1+total_dishes_per_click)*total_dishes_multiplier))})
+	DB.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1+total_dishes_per_click)*total_dishes_multiplier))})
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -162,13 +159,13 @@ func CookClick(c echo.Context) error {
 }
 
 func SellClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 
 	var (
 		session models.Session
 	)
 
-	db.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := filterUpgrades(session, true)
 
 	var (
@@ -197,9 +194,9 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click)*total_money_multiplier))})
+	DB.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click)*total_money_multiplier))})
 	new_xp := math.Round((session.Level.XP+0.2)*100) / 100
-	db.Model(&models.Level{}).Where("session_id = ?", session.ID).Select("xp").Updates(map[string]interface{}{"xp": new_xp})
+	DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Select("xp").Updates(map[string]interface{}{"xp": new_xp})
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -210,7 +207,7 @@ func SellClick(c echo.Context) error {
 }
 
 func BuyUpgrade(c echo.Context) error {
-	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 	upgrade_id := utils.StringToUint(c.Param("upgrade_id"))
 
 	var (
@@ -220,7 +217,7 @@ func BuyUpgrade(c echo.Context) error {
 		result_price uint = 0
 	)
 
-	db.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
+	DB.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
 
 	for _, upgrade := range filterUpgrades(session, false) {
 		if upgrade.ID == upgrade_id {
@@ -249,8 +246,8 @@ func BuyUpgrade(c echo.Context) error {
 		})
 	}
 
-	db.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
-	db.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
+	DB.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
+	DB.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -259,10 +256,10 @@ func BuyUpgrade(c echo.Context) error {
 }
 
 func GetUpgrades(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 
 	var session models.Session
-	db.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
 	filtered_upgrades := filterUpgrades(session, false)
 
@@ -273,14 +270,14 @@ func GetUpgrades(c echo.Context) error {
 }
 
 func GetLevel(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 	var (
 		session models.Session
 		level   models.LevelXP
 	)
 
-	db.Preload("Level").Where("user_id = ?", id).First(&session)
-	db.Where("rank = ?", session.Level.Rank + 1).First(&level)
+	DB.Preload("Level").Where("user_id = ?", id).First(&session)
+	DB.Where("rank = ?", session.Level.Rank + 1).First(&level)
 
 	if level.ID == 0 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -300,14 +297,14 @@ func GetLevel(c echo.Context) error {
 }
 
 func UpdateLevel(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
 	var (
 		level   models.Level
 		next_level models.LevelXP
 	)
 
-	db.Where("session_id = (?)", db.Model(&models.Session{}).Select("id").Where("user_id = ?", id),).First(&level)
-	db.Where("rank = ?", level.Rank + 1).First(&next_level)
+	DB.Where("session_id = (?)", DB.Model(&models.Session{}).Select("id").Where("user_id = ?", id),).First(&level)
+	DB.Where("rank = ?", level.Rank + 1).First(&next_level)
 	
 	if next_level.ID == 0 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -317,7 +314,7 @@ func UpdateLevel(c echo.Context) error {
 	}
 
 	if level.XP == float64(next_level.XP){
-		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": 0, "rank": level.Rank + 1})
+		DB.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": 0, "rank": level.Rank + 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
@@ -325,7 +322,7 @@ func UpdateLevel(c echo.Context) error {
 	}
 
 	if level.XP > float64(next_level.XP) {
-		db.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round((level.XP - float64(next_level.XP)) * 100) / 100, "rank": level.Rank + 1})
+		DB.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round((level.XP - float64(next_level.XP)) * 100) / 100, "rank": level.Rank + 1})
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
