@@ -32,6 +32,7 @@ func main() {
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
 	routes.InitGameRoutes(game)
+	routes.InitPassiveWS(e)
 
 	e.Start(":1323")
 

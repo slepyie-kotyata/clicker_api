@@ -2,6 +2,7 @@ package service
 
 import (
 	"clicker_api/environment"
+	"errors"
 	"strings"
 	"time"
 
@@ -43,9 +44,16 @@ func ParseToken(token string, secret string) (*jwt.Token, error) {
 	return parsed_token, err
 }
 
-func ExtractIDFromToken(header string, secret string) string {
-	header_parts := strings.Split(header, " ")
-	token, _ := ParseToken(header_parts[1], secret)
+func ExtractIDFromToken(full_token string, secret string) string {
+	token_parts := strings.Split(full_token, " ")
+
+	var token *jwt.Token
+
+	if len(token_parts) > 1 {
+		token, _ = ParseToken(token_parts[1], secret)
+	} else {
+		token, _ = ParseToken(token_parts[0], secret)
+	}
 
 	claims, _ := token.Claims.(jwt.MapClaims)
 
@@ -54,3 +62,29 @@ func ExtractIDFromToken(header string, secret string) string {
 	return id
 }
 
+func ValidateAccessToken(access_token string, secret string) error {
+	if access_token == "" {
+		return errors.New("token must not be empty")
+	}
+
+	token, err := ParseToken(access_token, secret)
+	if err != nil || token == nil || !token.Valid {
+		return errors.New("token invalid")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("invalid token claims")
+	}
+
+	exp, ok := claims["exp"].(float64)
+	if ok {
+		if int64(exp) < time.Now().Unix() {
+			return errors.New("token expired")
+		}
+	} else {
+		return errors.New("invalid or missing expiration time")
+	}
+
+	return nil
+}
