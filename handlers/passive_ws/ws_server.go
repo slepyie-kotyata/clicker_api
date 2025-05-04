@@ -4,7 +4,6 @@ import (
 	"clicker_api/handlers"
 	"clicker_api/service"
 	"clicker_api/utils"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
