@@ -4,6 +4,7 @@ import (
 	"clicker_api/handlers"
 	"clicker_api/models"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -28,19 +29,18 @@ func (sm *SessionManager) CloseSession(id uint) {
 		return
 	}
 
-	session.once.Do(func() {
-		session.Client.Close()
-		close(session.Messages)
-		
-		sm.mu.Lock()
-		delete(sm.Sessions, id)
-		sm.mu.Unlock()
-	})
+	session.Client.Close()
+	close(session.Messages)
+	sm.mu.Lock()
+	delete(sm.Sessions, id)
+	sm.mu.Unlock()
 }
+
+var count int = 0
 
 func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) error {
 	var this_session models.Session
-	handlers.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&this_session)
+	handlers.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&this_session)
 
 	if this_session.ID == 0 {
 		return errors.New("game is not initialized")
@@ -55,6 +55,7 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 	sm.Sessions[this_session.ID] = &session
 
 	go session.HandleConnection(sm)
-
+	fmt.Printf("goroutine number %d started\n", count)
+	count++
 	return nil
 }
