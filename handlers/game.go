@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type ThisUpgrade struct {
@@ -152,7 +153,8 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier = 1
 	}
 
-	DB.Model(&session).Select("dishes").Updates(models.Session{Dishes: session.Dishes + uint(math.Ceil((1+total_dishes_per_click)*total_dishes_multiplier))})
+	DB.Model(&session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil((1 + total_dishes_per_click)*total_dishes_multiplier))))
+	DB.First(&session, session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -165,9 +167,12 @@ func SellClick(c echo.Context) error {
 
 	var (
 		session models.Session
+		level   models.Level
 	)
 
-	DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	DB.Where("session_id = ?", session.ID).First(&level)
+
 	filtered_upgrades := FilterUpgrades(session, true)
 
 	var (
@@ -196,15 +201,20 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	DB.Model(&session).Select("dishes", "money").Updates(models.Session{Dishes: session.Dishes - 1, Money: session.Money + uint(math.Ceil((total_money_per_click)*total_money_multiplier))})
-	new_xp := math.Round((session.Level.XP + 0.2 ) * 100) / 100
-	DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Select("xp").Updates(map[string]interface{}{"xp": new_xp})
+	DB.Model(&session).Updates(map[string]interface{}{
+		"money": gorm.Expr("money + ?", uint(math.Ceil((total_money_per_click)*total_money_multiplier))),
+		"dishes": gorm.Expr("dishes - ?", 1),
+	})
+	DB.Model(&level).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
+
+	DB.First(&session, session.ID)
+	DB.First(&level, level.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
 		"money":  session.Money,
-		"xp":     new_xp,
+		"xp":     level.XP,
 	})
 }
 
