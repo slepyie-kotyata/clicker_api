@@ -4,7 +4,7 @@ type Session struct {
 	ID         uint 			`json:"-" gorm:"primary_key"`
 	Money      uint				`json:"money"`
 	Dishes     		uint		`json:"dishes"`
-	PrestigeValue 	uint		`json:"prestige_value"`
+	PrestigeValue 	float64		`json:"prestige_value"`
 	UserID     		uint		`json:"user_id"`
 	Level      		*Level		`json:"level" gorm:"foreignKey:SessionID"`
 	Prestige   		*Prestige   `json:"prestige" gorm:"foreignKey:SessionID"`

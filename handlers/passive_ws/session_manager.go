@@ -1,10 +1,9 @@
 package passivews
 
 import (
-	"clicker_api/handlers"
+	"clicker_api/database"
 	"clicker_api/models"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -25,22 +24,27 @@ func (sm *SessionManager) CloseSession(id uint) {
 	sm.mu.RLock()
 	session, ok := sm.Sessions[id]
 	sm.mu.RUnlock()
+
 	if !ok {
 		return
 	}
 
-	session.Client.Close()
-	close(session.Messages)
-	sm.mu.Lock()
-	delete(sm.Sessions, id)
-	sm.mu.Unlock()
-}
+	if session.Client != nil {
+		_ = session.Client.Close()
+	}
 
-var count int = 0
+	session.mu.Lock()
+	if !session.Closed {
+		session.Closed = true
+		close(session.Done)
+		close(session.Messages)
+	}
+	session.mu.Unlock()
+}
 
 func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) error {
 	var this_session models.Session
-	handlers.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&this_session)
+	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&this_session)
 
 	if this_session.ID == 0 {
 		return errors.New("game is not initialized")
@@ -50,12 +54,13 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 		Session: this_session,
 		Client: conn,
 		Messages: make(chan SessionMessage),
+		Done: make(chan struct{}),
 	}
 
 	sm.Sessions[this_session.ID] = &session
 
 	go session.HandleConnection(sm)
-	fmt.Printf("goroutine number %d started\n", count)
-	count++
+	go session.StartPassiveLoop()
+
 	return nil
 }
