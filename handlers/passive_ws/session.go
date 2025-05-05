@@ -1,10 +1,12 @@
 package passivews
 
 import (
-	"clicker_api/handlers"
+	"clicker_api/database"
 	"clicker_api/models"
+	"clicker_api/service"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -22,58 +24,45 @@ type Session struct {
 	Session  models.Session
 	Client   *websocket.Conn
 	Messages chan SessionMessage
+	Done     chan struct{}
+	Closed   bool
+	mu       sync.RWMutex
 }
 
+var seconds_interval uint = 3
+
 func (s *Session) UpdateSessionState(seconds uint) {
-	filtered_upgrades := handlers.FilterUpgrades(s.Session, true)
-	var (
-		total_money_per_second float64 = 0
-		total_dishes_per_second float64 = 0
-		total_money_passive_multiplier float64 = 0
-		total_dishes_passive_multiplier float64 = 0
-	)
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.Session, true))
+	current_prestige := math.Round(1 + 0.05 * s.Session.PrestigeValue)
 
-	dish_exist := false
+	var wg sync.WaitGroup
+	wg.Add(3)
 
-	for _, upgrade := range filtered_upgrades {
-		if upgrade.UpgradeType == "dish" && dish_exist == false {
-			dish_exist = true
-		}
-		if upgrade.Boost.BoostType == "mPs" {
-			total_money_per_second += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-		if upgrade.Boost.BoostType == "dPs" {
-			total_dishes_per_second += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-		if upgrade.Boost.BoostType == "mpM" {
-			total_money_passive_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-		if upgrade.Boost.BoostType == "dpM" {
-			total_dishes_passive_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-	}
+	go func() {
+		defer wg.Done()
+		s.PrestigeUpgrade(upgrade_stats, seconds)
+		
+	}()
 
-	if dish_exist == false {
+	go func() {
+		defer wg.Done()
+		s.PassiveSellUpdate(upgrade_stats, seconds, current_prestige)
+	}()
+
+	go func() {
+		defer wg.Done()
+		fmt.Println("Before Update:", s.Session.Dishes)
+		s.PassiveCookUpdate(upgrade_stats, seconds, current_prestige)
+	}()
+
+	wg.Wait()
+
+	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").First(&s.Session, s.Session.ID)
+	fmt.Println("After Upgrade:", s.Session.Dishes)
+
+	if s.Closed {
 		return
 	}
-
-	if total_money_passive_multiplier == 0 {
-		total_money_passive_multiplier = 1
-
-		if total_dishes_passive_multiplier == 0 {
-			total_dishes_passive_multiplier = 1
-		}
-	}
-
-	handlers.DB.Model(&s.Session).Select("dishes").Updates(models.Session{Dishes: s.Session.Dishes + uint(math.Ceil((1 + total_dishes_per_second) * total_dishes_passive_multiplier))})
-
-	if s.Session.Dishes <= 0 {
-		return
-	}
-
-	handlers.DB.Model(&s.Session).Select("dishes", "money").Updates(models.Session{Dishes: s.Session.Dishes - 1, Money: s.Session.Money + uint(math.Ceil((total_money_per_second) * total_money_passive_multiplier))})
-	new_xp := math.Round((s.Session.Level.XP + 0.2 ) * 100) / 100
-	handlers.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Select("xp").Updates(map[string]interface{}{"xp": new_xp})
 
 	s.Messages <- SessionMessage{
 		Money: s.Session.Money,
@@ -85,16 +74,18 @@ func (s *Session) UpdateSessionState(seconds uint) {
 }
 
 func (s *Session) StartPassiveLoop() {
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(time.Duration(seconds_interval) * time.Second)
 	defer func() {
-		fmt.Println("stopped")
 		ticker.Stop()
 	}()
 
 	for {
 		select {
 		case <- ticker.C:
-			s.UpdateSessionState(3)
+			s.UpdateSessionState(seconds_interval)
+		case <- s.Done:
+			fmt.Println("stopped")
+			return
 		}
 	}
 }
@@ -102,23 +93,28 @@ func (s *Session) StartPassiveLoop() {
 func (s *Session) HandleConnection(sm *SessionManager) {
 	defer sm.CloseSession(s.Session.ID)
 
-	session_message := map[string]interface{}{"message":SessionMessage{
-		Money: s.Session.Money,
-		Dishes: s.Session.Dishes,
-		Rank: s.Session.Level.Rank,
-		XP: s.Session.Level.XP,
-		PrestigeCurrent: s.Session.Prestige.CurrentValue,
-	}}
+	done := make(chan struct{})
 
-	err := s.Client.WriteJSON(session_message)
-	if err != nil {
-		fmt.Printf("failed to send message: %v\n", err)
-		return
-	}
+	go func() {
+		for {
+			select {
+			case session_message := <- s.Messages:
+				err := s.Client.WriteJSON(map[string]interface{}{"message": session_message})
+				if err != nil {
+					fmt.Println("failed to send message: %v\n", err)
+					close(done)
+					return
+				}
+			case <- done:
+				return
+			}
+		}
+	}()
 
 	for {
 		_, _, err := s.Client.NextReader()
 		if err != nil {
+			close(done)
 			if closeErr, ok := err.(*websocket.CloseError); ok {
 				switch closeErr.Code {
 				case websocket.CloseNormalClosure:

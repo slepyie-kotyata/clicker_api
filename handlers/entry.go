@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"clicker_api/database"
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
@@ -14,7 +15,7 @@ func Authentication(c echo.Context) error {
 	email, password := c.FormValue("email"), c.FormValue("password")
 
 	var user models.User
-	DB.Preload("Password").Where("email = ? ", email).First(&user)
+	database.DB.Preload("Password").Where("email = ? ", email).First(&user)
 	if user.ID == 0 || !service.DoPasswordsMatch(user.Password.Hash, password) {
 		return c.JSON(http.StatusUnauthorized, map[string]string{
 			"status": "1",
@@ -44,7 +45,7 @@ func Registrate(c echo.Context) error {
 	}
 			
 	var user models.User	
-	DB.Where("email = ?", email).First(&user)	
+	database.DB.Where("email = ?", email).First(&user)	
 	if (user.ID > 0) {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"status": "3",
@@ -62,7 +63,7 @@ func Registrate(c echo.Context) error {
 		},
 	}
 
-	DB.Create(&new_user)
+	database.DB.Create(&new_user)
 	
 	access_token := service.NewToken(utils.IntToString(int(new_user.ID)), true)
 	refresh_token := service.NewToken(utils.IntToString(int(new_user.ID)), false)
