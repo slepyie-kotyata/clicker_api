@@ -59,6 +59,7 @@ func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds 
 	}
 
 	database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(total_dishes_per_second * total_dishes_passive_multiplier * float64(seconds) * current_prestige))))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * total_dishes_per_second))
 }
 
 func (s *Session) PrestigeUpgrade (upgrade_stats service.UpgradeStats, seconds uint) {
