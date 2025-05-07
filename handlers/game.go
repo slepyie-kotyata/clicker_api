@@ -109,6 +109,7 @@ func CookClick(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
 		"dishes": session.Dishes,
+		"xp": session.Level.XP,
 	})
 }
 
@@ -204,8 +205,10 @@ func BuyUpgrade(c echo.Context) error {
 		})
 	}
 
-	database.DB.Model(&session).Select("money").Updates(models.Session{Money: session.Money - result_price})
+	database.DB.Model(&session).Update("money", gorm.Expr("money - ?", result_price))
 	database.DB.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
+
+	database.DB.First(&session, session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": "0",
@@ -272,7 +275,12 @@ func UpdateLevel(c echo.Context) error {
 	}
 
 	if level.XP == float64(next_level.XP){
-		database.DB.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": 0, "rank": level.Rank + 1})
+		database.DB.Model(&level).Updates(map[string]interface{}{
+			"xp": 0,
+			"rank": gorm.Expr("rank + ?", 1),
+		})
+		database.DB.First(&level, level.ID)
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
@@ -280,7 +288,12 @@ func UpdateLevel(c echo.Context) error {
 	}
 
 	if level.XP > float64(next_level.XP) {
-		database.DB.Model(&level).Select("xp","rank").Updates(map[string]interface{}{"xp": math.Round((level.XP - float64(next_level.XP)) * 100) / 100, "rank": level.Rank + 1})
+		database.DB.Model(&level).Updates(map[string]interface{}{
+			"xp": gorm.Expr("ROUND(xp - ?, 2)", next_level.XP),
+			"rank": gorm.Expr("rank + ?", 1),
+		})
+		database.DB.First(&level, level.ID)
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
@@ -290,5 +303,38 @@ func UpdateLevel(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"current_rank": level.Rank,
 		"current_xp": level.XP,
+	})
+}
+
+func SessionReset(c echo.Context) error {
+	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+
+	var session models.Session
+	database.DB.Preload("Prestige").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+
+	if session.Prestige.CurrentValue < 1 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"status": "2",
+			"message": "not enough prestige points",
+		})
+	}
+
+	b := math.Round((1 + 0.05 * session.Prestige.CurrentValue) * 10 ) / 10
+
+	database.DB.Model(&models.SessionUpgrade{}).Where("session_id = ?", session.ID).Select("times_bought").Updates(&models.SessionUpgrade{TimesBought: 0})
+	database.DB.Model(&models.Prestige{}).Where("session_id = ?", session.ID).Select("current_value").Updates(models.Prestige{CurrentValue: 0})
+	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Updates(map[string]interface{}{"rank": 0, "xp": 0})
+	
+	database.DB.Model(&session).Updates(map[string]interface{}{
+		"money": 0,
+		"dishes": 0,
+		"prestige_value": gorm.Expr("prestige_value + ?", b),
+	})
+
+	database.DB.First(&session, session.ID)
+	
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": 0,
+		"prestige_value": session.PrestigeValue,
 	})
 }
