@@ -330,11 +330,9 @@ func SessionReset(c echo.Context) error {
 		"dishes": 0,
 		"prestige_value": gorm.Expr("prestige_value + ?", b),
 	})
-
-	database.DB.First(&session, session.ID)
 	
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
-		"prestige_value": session.PrestigeValue,
+		"message": "success",
 	})
 }
