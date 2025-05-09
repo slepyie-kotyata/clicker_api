@@ -17,9 +17,10 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 	var (
 		total_money_per_second float64 = upgrade_stats.MoneyPerSecond
 		total_money_passive_multiplier float64 = upgrade_stats.PassiveMoneyMultiplier
+		total_sold_per_sell float64 = upgrade_stats.SoldPerSell
 	)
 
-	if total_money_per_second == 0 && total_money_passive_multiplier == 0 {
+	if total_money_per_second == 0 && total_money_passive_multiplier == 0 && total_sold_per_sell == 0{
 		return
 	} else {
 
@@ -30,13 +31,17 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 		if total_money_passive_multiplier == 0 {
 			total_money_passive_multiplier = 1
 		}
+
+		if total_sold_per_sell == 0 {
+			total_sold_per_sell = 1
+		}
 	}
 
 	database.DB.Model(&s.Session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil(total_money_per_second * total_money_passive_multiplier * float64(seconds) * current_prestige))),
+		"money": gorm.Expr("money + ?", uint(math.Ceil(total_money_per_second * total_money_passive_multiplier * float64(seconds) * current_prestige * total_sold_per_sell))),
 		"dishes": gorm.Expr("dishes - ?", 1 * seconds),
 	})
-	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * total_money_per_second))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * total_money_per_second))
 }
 
 func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds uint, current_prestige float64) {
