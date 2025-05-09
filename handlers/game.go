@@ -133,7 +133,8 @@ func SellClick(c echo.Context) error {
 
 	var (
 		total_money_multiplier float64 = 0
-		total_money_per_click  float64 = 0
+		total_money_per_click float64 = 0
+		total_sold_per_sell float64 = 1
 	)
 
 	for _, upgrade := range filtered_upgrades {
@@ -144,6 +145,10 @@ func SellClick(c echo.Context) error {
 		if upgrade.Boost.BoostType == "mPc" {
 			total_money_per_click += upgrade.Boost.Value
 		}
+
+		if upgrade.Boost.BoostType == "sPs" {
+			total_sold_per_sell += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		}
 	}
 
 	if total_money_multiplier == 0 {
@@ -151,7 +156,7 @@ func SellClick(c echo.Context) error {
 	}
 
 	database.DB.Model(&session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil((total_money_per_click) * total_money_multiplier))),
+		"money": gorm.Expr("money + ?", uint(math.Ceil((total_money_per_click) * total_money_multiplier * total_sold_per_sell))),
 		"dishes": gorm.Expr("dishes - ?", 1),
 	})
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
