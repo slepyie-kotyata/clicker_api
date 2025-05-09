@@ -21,7 +21,12 @@ type FilteredUpgrade struct {
 type UpgradeStats struct {
 	MoneyPerSecond 			float64
 	PassiveMoneyMultiplier 	float64
+	SoldPerSell             float64
 	DishesPerSecond         float64
+	DishesPerClick          float64
+	DishesMultiplier        float64
+	MoneyMultiplier 		float64
+	MoneyPerClick			float64
 	PassiveDishesMultiplier	float64
 	HasDish					bool
 }
@@ -82,6 +87,16 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 			upgrade_stats.PassiveMoneyMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dpM":
 			upgrade_stats.PassiveDishesMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "sPs":
+			upgrade_stats.SoldPerSell+= upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dPc":
+			upgrade_stats.DishesPerClick += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "mPc":
+			upgrade_stats.MoneyPerClick += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dM":
+			upgrade_stats.DishesMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "mM":
+			upgrade_stats.MoneyMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		}
 
 		if upgrade.UpgradeType == "dish" {

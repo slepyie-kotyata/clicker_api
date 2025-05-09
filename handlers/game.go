@@ -69,10 +69,11 @@ func CookClick(c echo.Context) error {
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	filtered_upgrades := service.FilterUpgrades(session, true)
+	upgrade_stats := service.CountBoostValues(filtered_upgrades)
 
 	var (
-		total_dishes_multiplier float64 = 0
-		total_dishes_per_click  float64 = 0
+		total_dishes_multiplier float64 = upgrade_stats.DishesMultiplier
+		total_dishes_per_click  float64 = upgrade_stats.DishesPerClick
 	)
 
 	dish_exist := false
@@ -81,16 +82,8 @@ func CookClick(c echo.Context) error {
 		if upgrade.UpgradeType == "dish" && dish_exist == false {
 			dish_exist = true
 		}
-
-		if upgrade.Boost.BoostType == "dM" {
-			total_dishes_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-
-		if upgrade.Boost.BoostType == "dPc" {
-			total_dishes_per_click += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
 	}
-
+	
 	if dish_exist == false {
 		return c.JSON(http.StatusForbidden, map[string]string{
 			"status":  "5",
@@ -121,6 +114,8 @@ func SellClick(c echo.Context) error {
 	)
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	filtered_upgrades := service.FilterUpgrades(session, true)
+	upgrade_stats := service.CountBoostValues(filtered_upgrades)
 
 	if session.Dishes <= 0 {
 		return c.JSON(http.StatusConflict, map[string]string{
@@ -129,31 +124,23 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	filtered_upgrades := service.FilterUpgrades(session, true)
-
 	var (
-		total_money_multiplier float64 = 0
-		total_money_per_click float64 = 0
-		total_sold_per_sell float64 = 1
+		total_money_multiplier float64 = upgrade_stats.MoneyMultiplier
+		total_money_per_click float64 = upgrade_stats.MoneyPerClick
+		total_sold_per_sell float64 = upgrade_stats.SoldPerSell
 	)
 
-	for _, upgrade := range filtered_upgrades {
-		if upgrade.Boost.BoostType == "mM" {
-			total_money_multiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		if total_money_multiplier == 0 {
+			total_money_multiplier = 1
 		}
 
-		if upgrade.Boost.BoostType == "mPc" {
-			total_money_per_click += upgrade.Boost.Value
+		if total_money_per_click == 0 {
+			total_money_per_click = 1
 		}
 
-		if upgrade.Boost.BoostType == "sPs" {
-			total_sold_per_sell += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		if total_sold_per_sell == 0 {
+			total_sold_per_sell = 1
 		}
-	}
-
-	if total_money_multiplier == 0 {
-		total_money_multiplier = 1
-	}
 
 	database.DB.Model(&session).Updates(map[string]interface{}{
 		"money": gorm.Expr("money + ?", uint(math.Ceil((total_money_per_click) * total_money_multiplier * total_sold_per_sell))),
