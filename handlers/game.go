@@ -75,16 +75,8 @@ func CookClick(c echo.Context) error {
 		total_dishes_multiplier float64 = upgrade_stats.DishesMultiplier
 		total_dishes_per_click  float64 = upgrade_stats.DishesPerClick
 	)
-
-	dish_exist := false
-
-	for _, upgrade := range filtered_upgrades {
-		if upgrade.UpgradeType == "dish" && dish_exist == false {
-			dish_exist = true
-		}
-	}
 	
-	if dish_exist == false {
+	if upgrade_stats.HasDish == false {
 		return c.JSON(http.StatusForbidden, map[string]string{
 			"status":  "5",
 			"message": "can't perform action",
