@@ -19,16 +19,32 @@ type FilteredUpgrade struct {
 }
 
 type UpgradeStats struct {
-	MoneyPerSecond 			float64
-	PassiveMoneyMultiplier 	float64
-	SoldPerSell             float64
-	DishesPerSecond         float64
-	DishesPerClick          float64
-	DishesMultiplier        float64
-	MoneyMultiplier 		float64
-	MoneyPerClick			float64
-	PassiveDishesMultiplier	float64
-	HasDish					bool
+	MpS		float64
+	MpM 	float64
+	SpS     float64
+	DpS     float64
+	DpC     float64
+	Dm      float64
+	Mm 		float64
+	MpC		float64
+	DpM		float64
+	HasDish	bool
+}
+
+func SetDefaults(stats *UpgradeStats) {
+	defaults := map[string]*float64{
+		"dPs": &stats.DpS,
+		"mPs": &stats.MpS,
+		"sPs": &stats.SpS,
+		"dpM": &stats.MpM,
+		"mpM": &stats.DpM,
+	}
+
+	for _, ptr := range defaults {
+		if *ptr == 0 {
+			*ptr = 1
+		}
+	}
 }
 
 func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
@@ -80,28 +96,36 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 	for _, upgrade := range filtered_upgrades {
 		switch upgrade.Boost.BoostType {
 		case "mPs":
-			upgrade_stats.MoneyPerSecond += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.MpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dPs":
-			upgrade_stats.DishesPerSecond += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.DpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mpM":
-			upgrade_stats.PassiveMoneyMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.MpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dpM":
-			upgrade_stats.PassiveDishesMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.DpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "sPs":
-			upgrade_stats.SoldPerSell+= upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.SpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dPc":
-			upgrade_stats.DishesPerClick += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.DpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mPc":
-			upgrade_stats.MoneyPerClick += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.MpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dM":
-			upgrade_stats.DishesMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.Dm += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mM":
-			upgrade_stats.MoneyMultiplier += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.Mm += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		}
 
 		if upgrade.UpgradeType == "dish" {
 			upgrade_stats.HasDish = true
 		}
+	}
+
+	if upgrade_stats.Mm == 0 {
+		upgrade_stats.Mm = 1
+	}
+
+	if upgrade_stats.Dm == 0 {
+		upgrade_stats.Dm = 1
 	}
 
 	return upgrade_stats

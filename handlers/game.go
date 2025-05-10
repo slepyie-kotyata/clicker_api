@@ -68,13 +68,7 @@ func CookClick(c echo.Context) error {
 	var session models.Session
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
-	filtered_upgrades := service.FilterUpgrades(session, true)
-	upgrade_stats := service.CountBoostValues(filtered_upgrades)
-
-	var (
-		total_dishes_multiplier float64 = upgrade_stats.DishesMultiplier
-		total_dishes_per_click  float64 = upgrade_stats.DishesPerClick
-	)
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 	
 	if upgrade_stats.HasDish == false {
 		return c.JSON(http.StatusForbidden, map[string]string{
@@ -83,11 +77,7 @@ func CookClick(c echo.Context) error {
 		})
 	}
 
-	if total_dishes_multiplier == 0 {
-		total_dishes_multiplier = 1
-	}
-
-	database.DB.Model(&session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil((1 + total_dishes_per_click)*total_dishes_multiplier))))
+	database.DB.Model(&session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))))
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
 	database.DB.Preload("Level").First(&session, session.ID)
 
@@ -106,8 +96,7 @@ func SellClick(c echo.Context) error {
 	)
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
-	filtered_upgrades := service.FilterUpgrades(session, true)
-	upgrade_stats := service.CountBoostValues(filtered_upgrades)
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 
 	if session.Dishes <= 0 {
 		return c.JSON(http.StatusConflict, map[string]string{
@@ -116,26 +105,8 @@ func SellClick(c echo.Context) error {
 		})
 	}
 
-	var (
-		total_money_multiplier float64 = upgrade_stats.MoneyMultiplier
-		total_money_per_click float64 = upgrade_stats.MoneyPerClick
-		total_sold_per_sell float64 = upgrade_stats.SoldPerSell
-	)
-
-		if total_money_multiplier == 0 {
-			total_money_multiplier = 1
-		}
-
-		if total_money_per_click == 0 {
-			total_money_per_click = 1
-		}
-
-		if total_sold_per_sell == 0 {
-			total_sold_per_sell = 1
-		}
-
 	database.DB.Model(&session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil((total_money_per_click) * total_money_multiplier * total_sold_per_sell))),
+		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * upgrade_stats.SpS))),
 		"dishes": gorm.Expr("dishes - ?", 1),
 	})
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
