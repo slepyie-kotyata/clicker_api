@@ -16,17 +16,17 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 		return 
 	}
 
-	if upgrade_stats.MpS == 0 && upgrade_stats.MpM == 0 && upgrade_stats.SpS == 0 {
+	if upgrade_stats.MpS == 0 && upgrade_stats.MpM == 0{
 		return
 	}
 
 	service.SetDefaults(&upgrade_stats)
 
-	minNum := min(upgrade_stats.SpS, float64(s.Session.Dishes))
+	minNum := min(float64(seconds) * upgrade_stats.SpS, float64(seconds) * float64(s.Session.Dishes))
 
 	database.DB.Model(&s.Session).Updates(map[string]interface{}{
 		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * current_prestige * minNum))),
-		"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum * float64(seconds)))),
+		"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
 	})
 
 	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * upgrade_stats.MpS))
