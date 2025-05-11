@@ -100,40 +100,24 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 		case "dPs":
 			upgrade_stats.DpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mpM":
-			upgrade_stats.MpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.MpM += 1 + (upgrade.Boost.Value * float64(upgrade.TimesBought))
 		case "dpM":
 			upgrade_stats.DpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "sPs":
-			upgrade_stats.SpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.SpS += 1 + (upgrade.Boost.Value * float64(upgrade.TimesBought))
 		case "dPc":
 			upgrade_stats.DpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mPc":
 			upgrade_stats.MpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dM":
-			upgrade_stats.Dm += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.Dm += 1 + (upgrade.Boost.Value * float64(upgrade.TimesBought))
 		case "mM":
-			upgrade_stats.Mm += upgrade.Boost.Value * float64(upgrade.TimesBought)
+			upgrade_stats.Mm += 1 + (upgrade.Boost.Value * float64(upgrade.TimesBought))
 		}
 
 		if upgrade.UpgradeType == "dish" {
 			upgrade_stats.HasDish = true
 		}
-	}
-
-	if upgrade_stats.Mm == 0 {
-		upgrade_stats.Mm = 1
-	}
-
-	if upgrade_stats.Dm == 0 {
-		upgrade_stats.Dm = 1
-	}
-
-	if upgrade_stats.SpS == 0 {
-		upgrade_stats.SpS = 1
-	}
-
-	if upgrade_stats.MpM == 0 {
-		upgrade_stats.MpM = 1
 	}
 
 	return upgrade_stats
