@@ -132,5 +132,9 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 		upgrade_stats.SpS = 1
 	}
 
+	if upgrade_stats.MpM == 0 {
+		upgrade_stats.MpM = 1
+	}
+
 	return upgrade_stats
 }
