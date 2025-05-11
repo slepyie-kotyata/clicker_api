@@ -107,7 +107,7 @@ func SellClick(c echo.Context) error {
 
 	database.DB.Model(&session).Updates(map[string]interface{}{
 		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * upgrade_stats.SpS))),
-		"dishes": gorm.Expr("dishes - ?", 1),
+		"dishes": gorm.Expr("dishes - ?", upgrade_stats.SpS),
 	})
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
 	database.DB.Preload("Level").First(&session, session.ID)

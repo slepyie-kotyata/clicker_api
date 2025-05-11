@@ -128,5 +128,9 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 		upgrade_stats.Dm = 1
 	}
 
+	if upgrade_stats.SpS == 0 {
+		upgrade_stats.SpS = 1
+	}
+
 	return upgrade_stats
 }
