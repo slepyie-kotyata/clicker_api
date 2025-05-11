@@ -104,7 +104,7 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 		case "dpM":
 			upgrade_stats.DpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "sPs":
-			upgrade_stats.SpS += 1 + (upgrade.Boost.Value * float64(upgrade.TimesBought))
+			upgrade_stats.SpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "dPc":
 			upgrade_stats.DpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
 		case "mPc":
@@ -131,6 +131,8 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 	if upgrade_stats.MpM == 0 {
 		upgrade_stats.MpM = 1
 	}	
+
+	upgrade_stats.SpS += 1
 
 	return upgrade_stats
 }
