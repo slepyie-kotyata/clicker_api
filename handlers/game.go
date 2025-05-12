@@ -98,7 +98,7 @@ func SellClick(c echo.Context) error {
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 	
-	minNum := min(upgrade_stats.SpS, float64(session.Dishes))
+	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
 	
 	if session.Dishes <= 0 {
 		return c.JSON(http.StatusConflict, map[string]string{
@@ -108,8 +108,8 @@ func SellClick(c echo.Context) error {
 	}
 
 	database.DB.Model(&session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * minNum))),
-		"dishes": gorm.Expr("dishes - ?", minNum),
+		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num))),
+		"dishes": gorm.Expr("dishes - ?", min_num),
 	})
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
 	database.DB.Preload("Level").First(&session, session.ID)

@@ -35,7 +35,6 @@ func SetDefaults(stats *UpgradeStats) {
 	defaults := map[string]*float64{
 		"dPs": &stats.DpS,
 		"mPs": &stats.MpS,
-		"sPs": &stats.SpS,
 		"dpM": &stats.MpM,
 		"mpM": &stats.DpM,
 	}
@@ -83,6 +82,7 @@ func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
 			}
 		}
 	}
+
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
 		return filtered_upgrades[i].ID < filtered_upgrades[j].ID
 	})

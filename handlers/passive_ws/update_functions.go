@@ -16,7 +16,7 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 		return 
 	}
 
-	if upgrade_stats.MpS == 0{
+	if upgrade_stats.MpS == 0 {
 		return
 	}
 
