@@ -62,12 +62,12 @@ func ExtractIDFromToken(full_token string, secret string) string {
 	return id
 }
 
-func ValidateAccessToken(access_token string, secret string) error {
-	if access_token == "" {
+func ValidateAccessToken(token_string string, secret string) error {
+	if token_string == "" {
 		return errors.New("token must not be empty")
 	}
 
-	token, err := ParseToken(access_token, secret)
+	token, err := ParseToken(token_string, secret)
 	if err != nil || token == nil || !token.Valid {
 		return errors.New("token invalid")
 	}
