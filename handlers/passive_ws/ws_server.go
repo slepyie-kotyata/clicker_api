@@ -21,7 +21,15 @@ var session_manager = NewSessionManager()
 
 func ServeWS(c echo.Context) error {
 	token := c.QueryParam("token")
-	err := service.ValidateAccessToken(token, handlers.Secret)
+
+	if token == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"status": "6",
+			"message": "missing token",
+		})
+	}
+	
+	err := service.ValidateAccessToken(token, handlers.Access_secret)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"status": "6",
@@ -29,7 +37,7 @@ func ServeWS(c echo.Context) error {
 		})
 	}
 
-	id := utils.StringToUint(service.ExtractIDFromToken(token, handlers.Secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(token, handlers.Access_secret))
 
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

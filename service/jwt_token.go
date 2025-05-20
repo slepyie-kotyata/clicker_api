@@ -3,10 +3,12 @@ package service
 import (
 	"clicker_api/environment"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/labstack/echo/v4"
 )
 
 func NewToken(id string, is_access bool) string {
@@ -63,10 +65,6 @@ func ExtractIDFromToken(full_token string, secret string) string {
 }
 
 func ValidateAccessToken(token_string string, secret string) error {
-	if token_string == "" {
-		return errors.New("token must not be empty")
-	}
-
 	token, err := ParseToken(token_string, secret)
 	if err != nil || token == nil || !token.Valid {
 		return errors.New("token invalid")
@@ -74,6 +72,16 @@ func ValidateAccessToken(token_string string, secret string) error {
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
+		return errors.New("invalid token claims")
+	}
+
+	id, ok := claims["id"]
+	
+	if !ok {
+		return errors.New("invalid token claims")
+	}
+	
+	if _, ok := id.(string); !ok {
 		return errors.New("invalid token claims")
 	}
 
@@ -87,4 +95,40 @@ func ValidateAccessToken(token_string string, secret string) error {
 	}
 
 	return nil
+}
+
+func JWTMiddleware(secret string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func (c echo.Context) error {
+			header := c.Request().Header.Get("Authorization")
+			if header == "" {
+				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+					"status": 1,
+					"message": "missing token",
+				})
+			}
+
+			header_parts := strings.Split(header, " ")
+			if len(header_parts) != 2 || header_parts[0] != "Bearer" {
+				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+					"status": 1,
+					"message": "invalid token format",
+				})
+			}
+
+			token := header_parts[1]
+
+			err := ValidateAccessToken(token, secret)
+			if err != nil {
+				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+					"status": 1,
+					"message": err.Error(),
+				})
+			}
+
+			c.Set("id", ExtractIDFromToken(token, secret))
+
+			return next(c)
+		}
+	}
 }
