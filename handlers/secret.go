@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	Secret = environment.GetVariable("ACCESS_TOKEN_SECRET")
+	Access_secret = environment.GetVariable("ACCESS_TOKEN_SECRET")
+	Refresh_secret = environment.GetVariable("REFRESH_TOKEN_SECRET")
 )

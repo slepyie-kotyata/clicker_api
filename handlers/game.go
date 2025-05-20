@@ -13,11 +13,12 @@ import (
 )
 
 
-
+//TODO: дописать изменения в функциях
 
 
 func InitGame(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
 
 	var session models.Session
 	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
@@ -63,7 +64,8 @@ func InitGame(c echo.Context) error {
 }
 
 func CookClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
 
 	var session models.Session
 
@@ -89,7 +91,8 @@ func CookClick(c echo.Context) error {
 }
 
 func SellClick(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
 
 	var (
 		session models.Session
@@ -123,7 +126,8 @@ func SellClick(c echo.Context) error {
 }
 
 func BuyUpgrade(c echo.Context) error {
-	user_id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	user_id := utils.StringToUint(context_id)
 	upgrade_id := utils.StringToUint(c.Param("upgrade_id"))
 
 	var (
@@ -174,7 +178,8 @@ func BuyUpgrade(c echo.Context) error {
 }
 
 func GetUpgrades(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
 
 	var session models.Session
 	database.DB.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
@@ -188,7 +193,9 @@ func GetUpgrades(c echo.Context) error {
 }
 
 func GetLevel(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
+
 	var (
 		session models.Session
 		level   models.LevelXP
@@ -215,7 +222,9 @@ func GetLevel(c echo.Context) error {
 }
 
 func UpdateLevel(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
+
 	var (
 		level   models.Level
 		next_level models.LevelXP
@@ -264,7 +273,8 @@ func UpdateLevel(c echo.Context) error {
 }
 
 func SessionReset(c echo.Context) error {
-	id := utils.StringToUint(service.ExtractIDFromToken(c.Request().Header.Get("Authorization"), Secret))
+	context_id, _ := c.Get("id").(string)
+	id := utils.StringToUint(context_id)
 
 	var session models.Session
 	database.DB.Preload("Prestige").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)

@@ -1,10 +1,9 @@
 package main
 
 import (
-	"clicker_api/environment"
+	"clicker_api/handlers"
 	"clicker_api/routes"
-
-	echojwt "github.com/labstack/echo-jwt/v4"
+	"clicker_api/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -19,15 +18,8 @@ func main() {
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS, echo.PATCH},
 	}))
 
-	game := e.Group("/game")
-	game.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(environment.GetVariable("ACCESS_TOKEN_SECRET")),
-	}))
-
-	refresh := e.Group("/refresh")
-	refresh.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(environment.GetVariable("REFRESH_TOKEN_SECRET")),
-	}))
+	game := e.Group("/game", service.JWTMiddleware(handlers.Access_secret))
+	refresh := e.Group("/refresh", service.JWTMiddleware(handlers.Refresh_secret))
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
