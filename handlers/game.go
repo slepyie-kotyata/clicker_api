@@ -5,10 +5,8 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
-	"fmt"
 	"math"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
