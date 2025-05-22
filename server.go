@@ -18,7 +18,9 @@ func main() {
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS, echo.PATCH},
 	}))
 
-	game := e.Group("/game", service.JWTMiddleware(handlers.Access_secret))
+	game := e.Group("/game", service.LimiterMiddleware())
+	game.Use(service.JWTMiddleware(handlers.Access_secret))
+	
 	refresh := e.Group("/refresh", service.JWTMiddleware(handlers.Refresh_secret))
 
 	routes.InitEntryRoutes(e)
