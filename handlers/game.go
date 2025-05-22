@@ -65,14 +65,6 @@ func CookClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
 
-	custom_time_header := c.Request().Header.Get("X-timestamp")
-	requestTime := time.UnixMilli(int64(utils.StringToUint(custom_time_header)))
-	currentTime := time.Now()
-
-	diff := currentTime.Sub(requestTime) // разница типа time.Duration
-
-	fmt.Printf("Разница: %d миллисекунд\n", diff.Milliseconds())
-
 	var session models.Session
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
@@ -99,14 +91,6 @@ func CookClick(c echo.Context) error {
 func SellClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
-
-	sent_time, _ := time.Parse(time.RFC3339, c.FormValue("timestamp"))
-
-	receivedTime := time.Now()
-
-	diff := receivedTime.Sub(sent_time)
-
-	fmt.Printf("timestamp difference: %v\n", diff)
 
 	var (
 		session models.Session
