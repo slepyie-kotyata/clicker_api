@@ -11,6 +11,10 @@ import (
 func LimiterMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func (c echo.Context) error {
+			if c.Request().Method == http.MethodGet {
+				return next(c)
+			}
+
 			time_header := c.Request().Header.Get("X-timestamp")
 			request_time := time.UnixMilli(int64(utils.StringToUint(time_header)))
 			current_time := time.Now()
