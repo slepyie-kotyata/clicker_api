@@ -68,13 +68,16 @@ func CookClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
 
-	sent_time:= time.UnixMilli(int64(utils.StringToUint(c.FormValue("timestamp")))).UTC()
+	time_header := c.Request().Header.Get("Date")
+	custom_time_header := c.Request().Header.Get("X-timestamp")
+	sent_time:= time.UnixMilli(int64(utils.StringToUint(custom_time_header))).UTC()
 
 	receivedTime := time.Now().UTC()
 
 	diff := receivedTime.Sub(sent_time)
 
 	fmt.Printf("timestamp difference: %v\n", diff)
+	fmt.Println(time_header)
 
 	var session models.Session
 
