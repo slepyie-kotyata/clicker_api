@@ -5,13 +5,14 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"fmt"
 	"math"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
-
 
 //TODO: дописать изменения в функциях
 
@@ -67,6 +68,14 @@ func CookClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
 
+	sent_time:= time.UnixMilli(int64(utils.StringToUint(c.FormValue("timestamp")))).UTC()
+
+	receivedTime := time.Now().UTC()
+
+	diff := receivedTime.Sub(sent_time)
+
+	fmt.Printf("timestamp difference: %v\n", diff)
+
 	var session models.Session
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
@@ -93,6 +102,14 @@ func CookClick(c echo.Context) error {
 func SellClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
+
+	sent_time, _ := time.Parse(time.RFC3339, c.FormValue("timestamp"))
+
+	receivedTime := time.Now()
+
+	diff := receivedTime.Sub(sent_time)
+
+	fmt.Printf("timestamp difference: %v\n", diff)
 
 	var (
 		session models.Session
