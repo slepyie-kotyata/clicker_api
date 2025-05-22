@@ -14,9 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//TODO: дописать изменения в функциях
-
-
 func InitGame(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
@@ -68,16 +65,13 @@ func CookClick(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
 
-	time_header := c.Request().Header.Get("Date")
 	custom_time_header := c.Request().Header.Get("X-timestamp")
-	sent_time:= time.UnixMilli(int64(utils.StringToUint(custom_time_header))).UTC()
+	requestTime := time.UnixMilli(int64(utils.StringToUint(custom_time_header)))
+	currentTime := time.Now()
 
-	receivedTime := time.Now().UTC()
+	diff := currentTime.Sub(requestTime) // разница типа time.Duration
 
-	diff := receivedTime.Sub(sent_time)
-
-	fmt.Printf("timestamp difference: %v\n", diff)
-	fmt.Println(time_header)
+	fmt.Printf("Разница: %d миллисекунд\n", diff.Milliseconds())
 
 	var session models.Session
 
