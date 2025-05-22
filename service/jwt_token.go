@@ -64,7 +64,7 @@ func ExtractIDFromToken(full_token string, secret string) string {
 	return id
 }
 
-func ValidateAccessToken(token_string string, secret string) error {
+func ValidateToken(token_string string, secret string) error {
 	token, err := ParseToken(token_string, secret)
 	if err != nil || token == nil || !token.Valid {
 		return errors.New("token invalid")
@@ -118,7 +118,7 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 
 			token := header_parts[1]
 
-			err := ValidateAccessToken(token, secret)
+			err := ValidateToken(token, secret)
 			if err != nil {
 				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 					"status": 1,

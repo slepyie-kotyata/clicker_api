@@ -34,7 +34,7 @@ func ServeWS(c echo.Context) error {
 		})
 	}
 	
-	err := service.ValidateAccessToken(token, handlers.Access_secret)
+	err := service.ValidateToken(token, handlers.Access_secret)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"status": "6",
