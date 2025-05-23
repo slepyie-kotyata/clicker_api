@@ -22,11 +22,9 @@ var upgrader = websocket.Upgrader{
 		}
 		
 		if allowedOrigins[origin] {
-		log.Println("Origin allowed")
 		return true
 	}
 
-	log.Println("Origin denied")
 	return false
 	},
 }
