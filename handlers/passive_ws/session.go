@@ -27,6 +27,7 @@ type Session struct {
 	Done     chan struct{}
 	Closed   bool
 	mu       sync.RWMutex
+	wsWrite  sync.Mutex
 }
 
 var seconds_interval uint = 3
@@ -52,13 +53,11 @@ func (s *Session) UpdateSessionState(seconds uint) {
 	go func() {
 		defer wg.Done()
 		fmt.Println("Before Update:", s.Session.Dishes)
-		s.PassiveCookUpdate(upgrade_stats, seconds, current_prestige)
 	}()
 
 	wg.Wait()
 
 	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").First(&s.Session, s.Session.ID)
-	fmt.Println("After Upgrade:", s.Session.Dishes)
 
 	if s.Closed {
 		return
@@ -84,22 +83,58 @@ func (s *Session) StartPassiveLoop() {
 		case <- ticker.C:
 			s.UpdateSessionState(seconds_interval)
 		case <- s.Done:
-			fmt.Println("stopped")
 			return
 		}
 	}
 }
+
+var (
+	pingInterval = 5 * time.Second
+	pongWait = 10 * time.Second
+	writeWait  = 1 * time.Second
+)
 
 func (s *Session) HandleConnection(sm *SessionManager) {
 	defer sm.CloseSession(s.Session.ID)
 
 	done := make(chan struct{})
 
+	s.Client.SetReadLimit(512)
+	s.Client.SetReadDeadline(time.Now().Add(pongWait))
+	s.Client.SetPongHandler(func(string) error {
+		s.Client.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				s.wsWrite.Lock()
+				err := s.Client.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)) 
+				s.wsWrite.Unlock()
+				if err != nil {
+					fmt.Printf("ping error for client %d: %v\n", s.Session.UserID, err)
+					close(done)
+					return
+				}
+			case <-s.Done:
+				return
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			select {
 			case session_message := <- s.Messages:
+				s.Client.SetWriteDeadline(time.Now().Add(writeWait))
+				s.wsWrite.Lock()
 				err := s.Client.WriteJSON(map[string]interface{}{"message": session_message})
+				s.wsWrite.Unlock()
 				if err != nil {
 					fmt.Println("failed to send message: %v\n", err)
 					close(done)

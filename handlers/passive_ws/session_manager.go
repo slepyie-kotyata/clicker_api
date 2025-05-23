@@ -40,6 +40,10 @@ func (sm *SessionManager) CloseSession(id uint) {
 		close(session.Messages)
 	}
 	session.mu.Unlock()
+
+	sm.mu.Lock()
+	delete(sm.Sessions, id)
+	sm.mu.Unlock()
 }
 
 func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) error {
