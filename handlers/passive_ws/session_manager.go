@@ -59,6 +59,7 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 		Client: conn,
 		Messages: make(chan SessionMessage),
 		Done: make(chan struct{}),
+		Success: make(chan struct{}, 1),
 	}
 
 	sm.Sessions[this_session.ID] = &session

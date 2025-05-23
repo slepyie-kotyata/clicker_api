@@ -6,6 +6,7 @@ import (
 	"clicker_api/service"
 	"fmt"
 	"math"
+	"net"
 	"sync"
 	"time"
 
@@ -26,8 +27,8 @@ type Session struct {
 	Messages chan SessionMessage
 	Done     chan struct{}
 	Closed   bool
+	Success  chan struct{}
 	mu       sync.RWMutex
-	wsWrite  sync.Mutex
 }
 
 var seconds_interval uint = 3
@@ -52,7 +53,6 @@ func (s *Session) UpdateSessionState(seconds uint) {
 
 	go func() {
 		defer wg.Done()
-		fmt.Println("Before Update:", s.Session.Dishes)
 	}()
 
 	wg.Wait()
@@ -82,59 +82,32 @@ func (s *Session) StartPassiveLoop() {
 		select {
 		case <- ticker.C:
 			s.UpdateSessionState(seconds_interval)
+
+			select {
+			case <- s.Success:
+			case <- time.After(time.Duration(seconds_interval) * time.Second):
+				fmt.Printf("client %d did not reply in time\n", s.Session.UserID)
+				s.Client.Close()
+				return
+			case <- s.Done:
+				return
+			}
 		case <- s.Done:
 			return
 		}
 	}
 }
 
-var (
-	pingInterval = 5 * time.Second
-	pongWait = 10 * time.Second
-	writeWait  = 1 * time.Second
-)
-
 func (s *Session) HandleConnection(sm *SessionManager) {
 	defer sm.CloseSession(s.Session.ID)
 
 	done := make(chan struct{})
 
-	s.Client.SetReadLimit(512)
-	s.Client.SetReadDeadline(time.Now().Add(pongWait))
-	s.Client.SetPongHandler(func(string) error {
-		s.Client.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
-	})
-
-	go func() {
-		ticker := time.NewTicker(pingInterval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				s.wsWrite.Lock()
-				err := s.Client.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)) 
-				s.wsWrite.Unlock()
-				if err != nil {
-					fmt.Printf("ping error for client %d: %v\n", s.Session.UserID, err)
-					close(done)
-					return
-				}
-			case <-s.Done:
-				return
-			}
-		}
-	}()
-
 	go func() {
 		for {
 			select {
 			case session_message := <- s.Messages:
-				s.Client.SetWriteDeadline(time.Now().Add(writeWait))
-				s.wsWrite.Lock()
-				err := s.Client.WriteJSON(map[string]interface{}{"message": session_message})
-				s.wsWrite.Unlock()
+				err := s.Client.WriteJSON(session_message)
 				if err != nil {
 					fmt.Println("failed to send message: %v\n", err)
 					close(done)
@@ -146,23 +119,30 @@ func (s *Session) HandleConnection(sm *SessionManager) {
 		}
 	}()
 
-	for {
-		_, _, err := s.Client.NextReader()
-		if err != nil {
-			close(done)
-			if closeErr, ok := err.(*websocket.CloseError); ok {
-				switch closeErr.Code {
-				case websocket.CloseNormalClosure:
-					fmt.Printf("client %d closed connection normally\n", s.Session.UserID)
-				case websocket.CloseGoingAway:
-					fmt.Printf("client %d is going away\n", s.Session.UserID)
-				default:
-					fmt.Printf("client %d closed with unexpected code %d: %v\n", s.Session.UserID, closeErr.Code, closeErr)
+	go func() {
+		for {
+			s.Client.SetReadDeadline(time.Now().Add(3 * time.Second))
+
+			_, message, err := s.Client.ReadMessage()
+			if err != nil {
+				close(done)
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					fmt.Printf("client %d disconnected unexpectedly: %v\n", s.Session.UserID, err)
+				} else if err, ok := err.(net.Error); ok && err.Timeout() {
+					fmt.Printf("client %d did not respond in time (timeout)\n", s.Session.UserID)
+				} else {
+					fmt.Printf("client %d read error: %v\n", s.Session.UserID, err)
 				}
-			} else {
-				fmt.Printf("client %d disconnected: %v\n", s.Session.UserID, err)
-			}	
-			break
+				return
+			}
+
+			if string(message) == `"success"` {
+				select {
+				case s.Success <- struct{}{}:
+				default:
+				}
+			}
 		}
-	}
+	}()
+	<-done
 }
