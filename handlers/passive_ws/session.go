@@ -26,8 +26,8 @@ type Session struct {
 	Client   *websocket.Conn
 	Messages chan SessionMessage
 	Done     chan struct{}
-	Closed   bool
 	Success  chan struct{}
+	Closed   bool
 	mu       sync.RWMutex
 }
 

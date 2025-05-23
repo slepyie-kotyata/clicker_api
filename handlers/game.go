@@ -243,9 +243,13 @@ func UpdateLevel(c echo.Context) error {
 		})
 		database.DB.First(&level, level.ID)
 
+		var new_next_level models.LevelXP
+		database.DB.Where("rank = ?", next_level.Rank + 1).First(&new_next_level)
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
+			"next_xp": new_next_level.XP,
 		})
 	}
 
@@ -256,9 +260,13 @@ func UpdateLevel(c echo.Context) error {
 		})
 		database.DB.First(&level, level.ID)
 
+		var new_next_level models.LevelXP
+		database.DB.Where("rank = ?", next_level.Rank + 1).First(&new_next_level)
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp": level.XP,
+			"next_xp": new_next_level.XP,
 		})
 	}
 
