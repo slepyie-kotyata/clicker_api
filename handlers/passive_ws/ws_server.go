@@ -14,12 +14,13 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		allowedOrigins := map[string]bool{
-			"https://clicker.enjine.ru": true,
-			"http://localhost:4200":     true,
-		}
-		return allowedOrigins[origin]
+		// origin := r.Header.Get("Origin")
+		// allowedOrigins := map[string]bool{
+		// 	"https://clicker.enjine.ru": true,
+		// 	"http://localhost:4200":     true,
+		// }
+		// return allowedOrigins[origin]
+		return true
 	},
 }
 var session_manager = NewSessionManager()
