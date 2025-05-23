@@ -82,9 +82,11 @@ func (s *Session) StartPassiveLoop() {
 		select {
 		case <- ticker.C:
 			s.UpdateSessionState(seconds_interval)
+			s.Client.SetReadDeadline(time.Now().Add(time.Duration(seconds_interval) * time.Second))
 
 			select {
 			case <- s.Success:
+				s.Client.SetReadDeadline(time.Time{})
 			case <- time.After(time.Duration(seconds_interval) * time.Second):
 				fmt.Printf("client %d did not reply in time\n", s.Session.UserID)
 				s.Client.Close()
@@ -121,8 +123,6 @@ func (s *Session) HandleConnection(sm *SessionManager) {
 
 	go func() {
 		for {
-			s.Client.SetReadDeadline(time.Now().Add(3 * time.Second))
-
 			_, message, err := s.Client.ReadMessage()
 			if err != nil {
 				close(done)
