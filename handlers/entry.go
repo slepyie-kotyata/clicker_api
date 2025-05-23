@@ -6,7 +6,6 @@ import (
 	"clicker_api/service"
 	"clicker_api/utils"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -52,11 +51,8 @@ func Registrate(c echo.Context) error {
             "message": "this user already exist",
 		})
 	}
-
-	username:= strings.Split(email, "@")
 	
 	new_user := models.User {
-		Username: username[0], 
 		Email: email, 
 		Password: models.Password {
 			Hash: service.HashPassword(password),
