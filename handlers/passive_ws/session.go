@@ -53,6 +53,7 @@ func (s *Session) UpdateSessionState(seconds uint) {
 
 	go func() {
 		defer wg.Done()
+		s.PassiveCookUpdate(upgrade_stats, seconds, current_prestige)
 	}()
 
 	wg.Wait()
