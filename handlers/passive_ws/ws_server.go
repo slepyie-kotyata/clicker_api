@@ -16,7 +16,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 
-		if origin == "" {
+		if origin == "" { //ДЛЯ ДЕБАГА ПРИ ТЕСТИРОВАНИИ УДАЛИТЬ
 			return true
 		}
 		

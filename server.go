@@ -19,7 +19,7 @@ func main() {
 	}))
 
 	// game := e.Group("/game", service.LimiterMiddleware())
-	game := e.Group("/game")
+	game := e.Group("/game") //ДЛЯ ДЕБАГА ПРИ ТЕСТИРОВАНИИ УДАЛИТЬ
 	game.Use(service.JWTMiddleware(handlers.Access_secret))
 	
 	refresh := e.Group("/refresh", service.JWTMiddleware(handlers.Refresh_secret))
