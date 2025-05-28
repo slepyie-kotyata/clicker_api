@@ -35,8 +35,10 @@ func SetDefaults(stats *UpgradeStats) {
 	defaults := map[string]*float64{
 		"dPs": &stats.DpS,
 		"mPs": &stats.MpS,
-		"dpM": &stats.MpM,
-		"mpM": &stats.DpM,
+		"dpM": &stats.DpM,
+		"mpM": &stats.MpM,
+		"mM": &stats.Mm,
+		"dM": &stats.Dm,
 	}
 
 	for _, ptr := range defaults {
@@ -118,18 +120,6 @@ func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
 		if upgrade.UpgradeType == "dish" {
 			upgrade_stats.HasDish = true
 		}
-	}
-
-	if upgrade_stats.Dm == 0 {
-		upgrade_stats.Dm = 1
-	}
-
-	if upgrade_stats.Mm == 0 {
-		upgrade_stats.Mm = 1
-	}	
-
-	if upgrade_stats.MpM == 0 {
-		upgrade_stats.MpM = 1
 	}	
 
 	upgrade_stats.SpS += 1

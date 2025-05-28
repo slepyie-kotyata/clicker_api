@@ -35,6 +35,10 @@ var seconds_interval uint = 3
 func (s *Session) UpdateSessionState(seconds uint) {
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.Session, true))
 
+	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
+		return
+	}
+
 	prestige_boost := s.Session.PrestigeBoost
 
 	if prestige_boost == 0 {

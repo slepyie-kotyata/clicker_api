@@ -67,7 +67,9 @@ func CookClick(c echo.Context) error {
 	var session models.Session
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
+	service.SetDefaults(&upgrade_stats)
 	
 	if upgrade_stats.HasDish == false {
 		return c.JSON(http.StatusForbidden, map[string]string{
@@ -105,7 +107,10 @@ func SellClick(c echo.Context) error {
 	}
 	
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
+	service.SetDefaults(&upgrade_stats) 
+
 	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
+	
 	prestige_boost := session.PrestigeBoost
 	if prestige_boost == 0 {
 		prestige_boost = 1
