@@ -306,7 +306,7 @@ func SessionReset(c echo.Context) error {
 	database.DB.Model(&session).Updates(map[string]interface{}{
 		"money": 0,
 		"dishes": 0,
-		"prestige_boost": p_boost,
+		"prestige_boost": gorm.Expr("prestige_boost + ?", p_boost),
 		"prestige_value": gorm.Expr("prestige_value + ?", p_value),
 	})
 	
