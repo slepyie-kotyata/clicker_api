@@ -5,7 +5,6 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"fmt"
-	"math"
 	"net"
 	"sync"
 	"time"
@@ -35,7 +34,12 @@ var seconds_interval uint = 3
 
 func (s *Session) UpdateSessionState(seconds uint) {
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.Session, true))
-	current_prestige := math.Round(1 + 0.05 * s.Session.PrestigeValue)
+
+	prestige_boost := s.Session.PrestigeBoost
+
+	if prestige_boost == 0 {
+		prestige_boost = 1
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(3)
@@ -48,12 +52,12 @@ func (s *Session) UpdateSessionState(seconds uint) {
 
 	go func() {
 		defer wg.Done()
-		s.PassiveSellUpdate(upgrade_stats, seconds, current_prestige)
+		s.PassiveSellUpdate(upgrade_stats, seconds, prestige_boost)
 	}()
 
 	go func() {
 		defer wg.Done()
-		s.PassiveCookUpdate(upgrade_stats, seconds, current_prestige)
+		s.PassiveCookUpdate(upgrade_stats, seconds, prestige_boost)
 	}()
 
 	wg.Wait()
