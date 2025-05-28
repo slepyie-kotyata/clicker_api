@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-//TODO: refactor - проверка на наличие пассивки - если нет то обрубать подключение
-
 func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds uint, prestige_boost float64) {
 	if s.Session.Dishes <= 0 || s.Session.Dishes < 3 {
 		return 
@@ -33,7 +31,7 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 }
 
 func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds uint, prestige_boost float64) {
-	if upgrade_stats.DpM == 0 && upgrade_stats.DpS == 0 {
+	if upgrade_stats.DpS == 0 {
 		return
 	}
 
@@ -45,7 +43,7 @@ func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds 
 }
 
 func (s *Session) PrestigeUpgrade (upgrade_stats service.UpgradeStats, seconds uint) {
-	if upgrade_stats.MpS == 0 && upgrade_stats.MpM == 0{
+	if upgrade_stats.MpS == 0 {
 		return
 	}
 
