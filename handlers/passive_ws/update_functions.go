@@ -9,9 +9,9 @@ import (
 	"gorm.io/gorm"
 )
 
+//TODO: refactor - проверка на наличие пассивки - если нет то обрубать подключение
 
-
-func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds uint, current_prestige float64) {
+func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds uint, prestige_boost float64) {
 	if s.Session.Dishes <= 0 || s.Session.Dishes < 3 {
 		return 
 	}
@@ -25,21 +25,21 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 	minNum := min((float64(seconds) * upgrade_stats.SpS), float64(s.Session.Dishes))
 
 	database.DB.Model(&s.Session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * current_prestige * minNum))),
+		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
 		"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
 	})
 
 	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * upgrade_stats.MpS))
 }
 
-func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds uint, current_prestige float64) {
+func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds uint, prestige_boost float64) {
 	if upgrade_stats.DpM == 0 && upgrade_stats.DpS == 0 {
 		return
 	}
 
 	service.SetDefaults(&upgrade_stats)
 
-	database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * current_prestige))))
+	database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
 	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * upgrade_stats.DpS))
 
 }

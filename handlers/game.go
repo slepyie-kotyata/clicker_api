@@ -32,6 +32,7 @@ func InitGame(c echo.Context) error {
 		Money: 0,
 		Dishes: 0,
 		PrestigeValue: 0,
+		PrestigeBoost: 0,
 		UserID: id,
 		Level: &models.Level{},
 		Prestige: &models.Prestige{},
@@ -95,9 +96,6 @@ func SellClick(c echo.Context) error {
 	)
 	
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
-	
-	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
 	
 	if session.Dishes <= 0 {
 		return c.JSON(http.StatusConflict, map[string]string{
@@ -105,11 +103,19 @@ func SellClick(c echo.Context) error {
 			"message": "not enough dishes",
 		})
 	}
+	
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
+	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
+	prestige_boost := session.PrestigeBoost
+	if prestige_boost == 0 {
+		prestige_boost = 1
+	}
 
 	database.DB.Model(&session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num))),
+		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost))),
 		"dishes": gorm.Expr("dishes - ?", min_num),
 	})
+
 	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
 	database.DB.Preload("Level").First(&session, session.ID)
 
@@ -290,7 +296,8 @@ func SessionReset(c echo.Context) error {
 		})
 	}
 
-	b := math.Round((1 + 0.05 * session.Prestige.CurrentValue) * 10 ) / 10
+	p_boost := math.Round((1 + 0.05 * session.Prestige.CurrentValue) * 10 ) / 10
+	p_value := session.Prestige.CurrentValue
 
 	database.DB.Model(&models.SessionUpgrade{}).Where("session_id = ?", session.ID).Select("times_bought").Updates(&models.SessionUpgrade{TimesBought: 0})
 	database.DB.Model(&models.Prestige{}).Where("session_id = ?", session.ID).Select("current_value").Updates(models.Prestige{CurrentValue: 0})
@@ -299,7 +306,8 @@ func SessionReset(c echo.Context) error {
 	database.DB.Model(&session).Updates(map[string]interface{}{
 		"money": 0,
 		"dishes": 0,
-		"prestige_value": gorm.Expr("prestige_value + ?", b),
+		"prestige_boost": p_boost,
+		"prestige_value": gorm.Expr("prestige_value + ?", p_value),
 	})
 	
 	return c.JSON(http.StatusOK, map[string]interface{}{
