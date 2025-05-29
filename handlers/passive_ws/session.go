@@ -35,8 +35,10 @@ type Session struct {
 var seconds_interval uint = 3
 
 func (s *Session) createMessage() {
+	var session models.Session
+	database.DB.Preload("Prestige").Preload("Level").First(&session, s.Session.ID)
+
 	s.last_mu.Lock()
-	defer s.last_mu.Unlock()
 	s.lastMessage = SessionMessage{
 		Money:           s.Session.Money,
 		Dishes:          s.Session.Dishes,
@@ -44,6 +46,7 @@ func (s *Session) createMessage() {
 		XP:              s.Session.Level.XP,
 		PrestigeCurrent: s.Session.Prestige.CurrentValue,
 	}
+	s.last_mu.Unlock()
 }
 
 func (s *Session) UpdateSessionState(seconds uint) {
