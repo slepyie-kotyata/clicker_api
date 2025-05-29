@@ -209,9 +209,7 @@ func GetLevel(c echo.Context) error {
 	)
 
 	database.DB.Preload("Level").Where("user_id = ?", id).First(&session)
-	database.DB.Where("rank = ?", session.Level.Rank + 1).First(&level)
-
-	if level.ID == 0 {
+	if level.Rank == 100 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": 0,
 			"current_rank": session.Level.Rank,
@@ -219,6 +217,8 @@ func GetLevel(c echo.Context) error {
 			"needed_xp": session.Level.XP,
 		})
 	}
+
+	database.DB.Where("rank = ?", session.Level.Rank + 1).First(&level)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
@@ -238,7 +238,7 @@ func UpdateLevel(c echo.Context) error {
 	)
 
 	database.DB.Where("session_id = (?)", database.DB.Model(&models.Session{}).Select("id").Where("user_id = ?", id),).First(&level)
-	
+
 	if level.Rank == 100 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
