@@ -54,10 +54,12 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 		return errors.New("game is not initialized")
 	}
 
+	sm.mu.RLock()
 	_, ok := sm.Sessions[this_session.ID]
+	sm.mu.RUnlock()
 
 	if ok {
-		return errors.New("session is already running")
+		sm.CloseSession(this_session.ID)
 	}
 
 	session := Session{
@@ -68,7 +70,9 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 		Success: make(chan struct{}, 1),
 	}
 
+	sm.mu.Lock()
 	sm.Sessions[this_session.ID] = &session
+	sm.mu.Unlock()
 
 	go session.HandleConnection(sm)
 	go session.StartPassiveLoop()
