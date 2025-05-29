@@ -215,7 +215,6 @@ func GetLevel(c echo.Context) error {
 			"status": 0,
 			"current_rank": session.Level.Rank,
 			"current_xp": session.Level.XP,
-			"needed_xp": session.Level.XP,
 		})
 	}
 
