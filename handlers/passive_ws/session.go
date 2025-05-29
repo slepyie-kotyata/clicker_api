@@ -21,19 +21,23 @@ type SessionMessage struct {
 }
 
 type Session struct {
-	Session  models.Session
-	Client   *websocket.Conn
-	Messages chan SessionMessage
-	Done     chan struct{}
-	Success  chan struct{}
-	Closed   bool
-	mu       sync.RWMutex
+	Session  		models.Session
+	Client   		*websocket.Conn
+	Messages 		chan SessionMessage
+	Done     		chan struct{}
+	Success  		chan struct{}
+	Closed   		bool
+	lastMessage 	SessionMessage
+	last_mu      	sync.RWMutex
+	mu       		sync.RWMutex
 }
 
 var seconds_interval uint = 3
 
 func (s *Session) createMessage() SessionMessage {
-	return SessionMessage{
+	s.last_mu.Lock()
+	defer s.last_mu.Unlock()
+	s.lastMessage = SessionMessage{
 		Money:           s.Session.Money,
 		Dishes:          s.Session.Dishes,
 		Rank:            s.Session.Level.Rank,
@@ -87,28 +91,47 @@ func (s *Session) UpdateSessionState(seconds uint) {
 }
 
 func (s *Session) StartPassiveLoop() {
-	ticker := time.NewTicker(time.Duration(seconds_interval) * time.Second)
+	update_ticker := time.NewTicker(time.Duration(seconds_interval) * time.Second)
+	send_ticker := time.NewTicker(time.Duration(seconds_interval) * time.Second)
+
 	defer func() {
-		ticker.Stop()
+		update_ticker.Stop()
+		send_ticker.Stop()
+	}()
+
+	const grace_period = 2 * time.Second
+
+	go func() {
+		for {
+			select {
+			case <- update_ticker.C:
+				s.UpdateSessionState(seconds_interval)
+				s.Client.SetReadDeadline(time.Now().Add(time.Duration(seconds_interval) * time.Second + grace_period))
+
+				select {
+				case <- s.Success:
+					s.Client.SetReadDeadline(time.Time{})
+				case <- time.After(time.Duration(seconds_interval) * time.Second):
+					fmt.Printf("client %d did not reply in time\n", s.Session.UserID)
+					s.Client.Close()
+					return
+				case <- s.Done:
+					return
+				}
+			case <- s.Done:
+				return
+			}
+		}
 	}()
 
 	for {
 		select {
-		case <- ticker.C:
-			s.UpdateSessionState(seconds_interval)
-			s.Client.SetReadDeadline(time.Now().Add(time.Duration(seconds_interval) * time.Second))
-
-			select {
-			case <- s.Success:
-				s.Client.SetReadDeadline(time.Time{})
-			case <- time.After(time.Duration(seconds_interval) * time.Second):
-				fmt.Printf("client %d did not reply in time\n", s.Session.UserID)
-				s.Client.Close()
-				return
-			case <- s.Done:
-				return
-			}
-		case <- s.Done:
+		case <-send_ticker.C:
+			s.last_mu.RLock()
+			msg := s.lastMessage
+			s.last_mu.RUnlock()
+			s.Messages <- msg
+		case <-s.Done:
 			return
 		}
 	}
