@@ -4,6 +4,7 @@ import (
 	"clicker_api/handlers"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -15,14 +16,17 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-
+		log.Printf("WebSocket request origin: %s", origin)
+		
 		if origin == "" { //ДЛЯ ДЕБАГА ПРИ ТЕСТИРОВАНИИ УДАЛИТЬ
 			return true
 		}
 		
 		allowedOrigins := map[string]bool{
-			"wss://clicker.enjine.ru": true,
-			"ws://localhost:4200":     true,
+			"wss://clicker.enjine.ru":    	true,
+			"ws://localhost:4200":        	true,
+			"https://clicker.enjine.ru": 	true,
+			"http://localhost:4200":     	true,
 		}
 
 		return allowedOrigins[origin]
