@@ -34,7 +34,7 @@ type Session struct {
 
 var seconds_interval uint = 3
 
-func (s *Session) createMessage() SessionMessage {
+func (s *Session) createMessage() {
 	s.last_mu.Lock()
 	defer s.last_mu.Unlock()
 	s.lastMessage = SessionMessage{
@@ -50,7 +50,7 @@ func (s *Session) UpdateSessionState(seconds uint) {
 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.Session, true))
 
 	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
-		s.Messages <- s.createMessage()
+		s.createMessage()
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s *Session) UpdateSessionState(seconds uint) {
 		return
 	}
 
-	s.Messages <- s.createMessage()
+	s.createMessage()
 }
 
 func (s *Session) StartPassiveLoop() {
