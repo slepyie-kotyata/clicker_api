@@ -35,16 +35,16 @@ type Session struct {
 var seconds_interval uint = 3
 
 func (s *Session) createMessage() {
-	var session models.Session
-	database.DB.Preload("Prestige").Preload("Level").First(&session, s.Session.ID)
+	var fresh models.Session
+	database.DB.Preload("Level").Preload("Prestige").Where("id = ?", s.Session.ID).First(&fresh)
 
 	s.last_mu.Lock()
 	s.lastMessage = SessionMessage{
-		Money:           s.Session.Money,
-		Dishes:          s.Session.Dishes,
-		Rank:            s.Session.Level.Rank,
-		XP:              s.Session.Level.XP,
-		PrestigeCurrent: s.Session.Prestige.CurrentValue,
+		Money:           fresh.Money,
+		Dishes:          fresh.Dishes,
+		Rank:            fresh.Level.Rank,
+		XP:              fresh.Level.XP,
+		PrestigeCurrent: fresh.Prestige.CurrentValue,
 	}
 	s.last_mu.Unlock()
 }
@@ -130,6 +130,7 @@ func (s *Session) StartPassiveLoop() {
 	for {
 		select {
 		case <-send_ticker.C:
+			s.createMessage()
 			s.last_mu.RLock()
 			msg := s.lastMessage
 			s.last_mu.RUnlock()
