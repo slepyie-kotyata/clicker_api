@@ -174,6 +174,7 @@ func BuyUpgrade(c echo.Context) error {
 	}
 
 	database.DB.Model(&session).Update("money", gorm.Expr("money - ?", result_price))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.1))
 	database.DB.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
 
 	database.DB.First(&session, session.ID)
