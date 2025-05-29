@@ -238,14 +238,15 @@ func UpdateLevel(c echo.Context) error {
 	)
 
 	database.DB.Where("session_id = (?)", database.DB.Model(&models.Session{}).Select("id").Where("user_id = ?", id),).First(&level)
-	database.DB.Where("rank = ?", level.Rank + 1).First(&next_level)
 	
-	if next_level.ID == 0 {
+	if level.Rank == 100 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"current_rank": level.Rank,
 			"current_xp":   level.XP,
 		})
 	}
+
+	database.DB.Where("rank = ?", level.Rank + 1).First(&next_level)
 
 	if level.XP == float64(next_level.XP){
 		database.DB.Model(&level).Updates(map[string]interface{}{
