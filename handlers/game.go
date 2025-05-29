@@ -210,7 +210,7 @@ func GetLevel(c echo.Context) error {
 	)
 
 	database.DB.Preload("Level").Where("user_id = ?", id).First(&session)
-	if level.Rank == 100 {
+	if session.Level.Rank == 100 {
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": 0,
 			"current_rank": session.Level.Rank,
