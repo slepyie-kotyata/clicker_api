@@ -54,6 +54,12 @@ func (sm *SessionManager) CreateAndAddToSession(conn *websocket.Conn, id uint) e
 		return errors.New("game is not initialized")
 	}
 
+	_, ok := sm.Sessions[this_session.ID]
+
+	if ok {
+		return errors.New("session is already running")
+	}
+
 	session := Session{
 		Session: this_session,
 		Client: conn,
