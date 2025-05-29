@@ -22,12 +22,18 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 
 	minNum := min((float64(seconds) * upgrade_stats.SpS), float64(s.Session.Dishes))
 
-	database.DB.Model(&s.Session).Updates(map[string]interface{}{
-		"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
-		"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
-	})
-
-	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * upgrade_stats.MpS))
+	if s.Session.Level.Rank == 100 {
+		database.DB.Model(&s.Session).Updates(map[string]interface{}{
+			"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
+			"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
+		})
+	} else {
+		database.DB.Model(&s.Session).Updates(map[string]interface{}{
+			"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
+			"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
+		})
+		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * upgrade_stats.MpS))
+	}
 }
 
 func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds uint, prestige_boost float64) {
@@ -37,9 +43,12 @@ func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds 
 
 	service.SetDefaults(&upgrade_stats)
 
-	database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
-	database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * upgrade_stats.DpS))
-
+	if s.Session.Level.Rank == 100 {
+		database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
+	} else {
+		database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
+		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * upgrade_stats.DpS))
+	}
 }
 
 func (s *Session) PrestigeUpgrade (upgrade_stats service.UpgradeStats, seconds uint) {
