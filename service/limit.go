@@ -2,6 +2,7 @@ package service
 
 import (
 	"clicker_api/utils"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -16,10 +17,17 @@ func LimiterMiddleware() echo.MiddlewareFunc {
 			}
 
 			time_header := c.Request().Header.Get("X-timestamp")
+			fmt.Println("time_header ", time_header)
+
 			request_time := time.UnixMilli(int64(utils.StringToUint(time_header)))
+			fmt.Println("request_time formatted ", request_time)
+
 			current_time := time.Now()
+			fmt.Println("current_time ", current_time)
 
 			diff := current_time.Sub(request_time)
+
+			fmt.Println("diff ", diff)
 
 			if diff >= time.Second || diff < 0 {
 				return c.JSON(http.StatusForbidden, map[string]interface{}{
