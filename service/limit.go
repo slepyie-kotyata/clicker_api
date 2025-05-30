@@ -29,7 +29,7 @@ func LimiterMiddleware() echo.MiddlewareFunc {
 
 			fmt.Println("diff ", diff)
 
-			if diff >= time.Second || diff < 0 {
+			if diff >= time.Second * 2 || diff < 0 {
 				return c.JSON(http.StatusForbidden, map[string]interface{}{
 					"status": 5,
 					"message": "request blocked",
