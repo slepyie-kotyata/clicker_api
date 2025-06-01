@@ -48,6 +48,20 @@ func SetDefaults(stats *UpgradeStats) {
 	}
 }
 
+var upgrade_priority = map[string]int{
+	"dish":      	1,
+	"equipment": 	2,
+	"global":    	3,
+	"staff": 		4,
+	"point":     	5,
+}
+
+func getUpgradeTypePriority(upgradeType models.UpgradeType) int {
+	p, _:= upgrade_priority[string(upgradeType)]
+
+	return p
+}
+
 func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
 	filtered_upgrades := make([]FilteredUpgrade, 0)
 
@@ -86,7 +100,14 @@ func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
 	}
 
 	sort.Slice(filtered_upgrades, func(i, j int) bool {
-		return filtered_upgrades[i].ID < filtered_upgrades[j].ID
+		p_i := getUpgradeTypePriority(filtered_upgrades[i].UpgradeType)
+		p_j := getUpgradeTypePriority(filtered_upgrades[j].UpgradeType)
+
+		if p_i != p_j {
+			return p_i < p_j
+		}
+		
+		return filtered_upgrades[i].Price < filtered_upgrades[j].Price
 	})
 
 	return filtered_upgrades
