@@ -16,11 +16,17 @@ func InitGame(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
 
-	var session models.Session
+	var (
+		session models.Session
+		user models.User
+	)
 	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
+	database.DB.Select("email").First(&user, id)
 
 	if session.ID > 0 {
 		filtered_upgrades := service.FilterUpgrades(session, true)
+		session.UserEmail = user.Email
+
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": "0",
 			"session": session,
@@ -50,6 +56,8 @@ func InitGame(c echo.Context) error {
 		}
 		database.DB.Create(&session_upgrade)
 	}
+
+	new_session.UserEmail = user.Email
 
 	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 

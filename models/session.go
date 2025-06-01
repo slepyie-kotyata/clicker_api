@@ -10,4 +10,5 @@ type Session struct {
 	Level      		*Level		`json:"level" gorm:"foreignKey:SessionID"`
 	Prestige   		*Prestige   `json:"prestige" gorm:"foreignKey:SessionID"`
 	Upgrades   		[]Upgrade   `json:"-" gorm:"many2many:session_upgrades;"`
+	UserEmail 		string 		`gorm:"-" json:"user_email"`
 }
