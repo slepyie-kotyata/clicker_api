@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//рефактор
+
 func InitGame(c echo.Context) error {
 	context_id, _ := c.Get("id").(string)
 	id := utils.StringToUint(context_id)
@@ -152,7 +154,7 @@ func BuyUpgrade(c echo.Context) error {
 		result_price uint = 0
 	)
 
-	database.DB.Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
+	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", user_id).First(&session)
 
 	for _, upgrade := range service.FilterUpgrades(session, false) {
 		if upgrade.ID == upgrade_id {
@@ -182,14 +184,15 @@ func BuyUpgrade(c echo.Context) error {
 	}
 
 	database.DB.Model(&session).Update("money", gorm.Expr("money - ?", result_price))
-	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.1))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.5))
 	database.DB.Model(&models.SessionUpgrade{}).Where("session_id = ? AND upgrade_id = ?", session.ID, upgrade_id).Select("times_bought").Updates(models.SessionUpgrade{TimesBought: this_upgrade.TimesBought + 1})
 
-	database.DB.First(&session, session.ID)
+	database.DB.Preload("Level").First(&session, session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status": "0",
-		"money":  session.Money,
+		"status": 	"0",
+		"money":  	session.Money,
+		"xp": 		session.Level.XP,
 	})
 }
 
