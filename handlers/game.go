@@ -184,7 +184,7 @@ func BuyUpgrade(c echo.Context) error {
 	if this_upgrade.TimesBought == 0 {
 		result_price = this_upgrade.Price
 	} else {
-		result_price = uint(math.Ceil(float64(this_upgrade.Price) * math.Pow(this_upgrade.PriceFactor, float64(this_upgrade.TimesBought))))
+		result_price = uint(math.Round(float64(this_upgrade.Price) * math.Pow(this_upgrade.PriceFactor, float64(this_upgrade.TimesBought))))
 	}
 
 	if session.Money < result_price {
