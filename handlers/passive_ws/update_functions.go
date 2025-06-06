@@ -32,7 +32,7 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 			"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
 			"dishes": gorm.Expr("dishes - ?", uint(math.Ceil(minNum))),
 		})
-		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.05 * float64(seconds) * upgrade_stats.MpS))
+		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", math.Abs(0.05 * float64(seconds) * upgrade_stats.MpS)))
 	}
 }
 
@@ -47,7 +47,7 @@ func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds 
 		database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
 	} else {
 		database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
-		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2 * float64(seconds) * upgrade_stats.DpS))
+		database.DB.Model(&models.Level{}).Where("session_id = ?", s.Session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", math.Abs(0.2 * float64(seconds) * upgrade_stats.DpS)))
 	}
 }
 
