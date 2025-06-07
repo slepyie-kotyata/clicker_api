@@ -90,7 +90,7 @@ func CookClick(c echo.Context) error {
 	}
 
 	database.DB.Model(&session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))))
-	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 10))
 	database.DB.Preload("Level").First(&session, session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -132,7 +132,7 @@ func SellClick(c echo.Context) error {
 		"dishes": gorm.Expr("dishes - ?", min_num),
 	})
 
-	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 0.2))
+	database.DB.Model(&models.Level{}).Where("session_id = ?", session.ID).Update("xp", gorm.Expr("ROUND(xp + ?, 2)", 10))
 	database.DB.Preload("Level").First(&session, session.ID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -163,7 +163,7 @@ func BuyUpgrade(c echo.Context) error {
 		xp_increase = 0
 	} else {
 		database.DB.Where("rank = ?", session.Level.Rank + 1).Find(&level_xp)
-		xp_increase = percent.Percent(2, int(level_xp.XP))
+		xp_increase = percent.Percent(10, int(level_xp.XP))
 
 	}
 
