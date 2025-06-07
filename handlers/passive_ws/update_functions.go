@@ -22,6 +22,7 @@ func (s *Session) PassiveSellUpdate(upgrade_stats service.UpgradeStats, seconds 
 
 	minNum := min((float64(seconds) * upgrade_stats.SpS), float64(s.Session.Dishes))
 
+	//рефактор
 	if s.Session.Level.Rank == 100 {
 		database.DB.Model(&s.Session).Updates(map[string]interface{}{
 			"money": gorm.Expr("money + ?", uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))),
@@ -43,6 +44,7 @@ func (s *Session) PassiveCookUpdate(upgrade_stats service.UpgradeStats, seconds 
 
 	service.SetDefaults(&upgrade_stats)
 
+	//рефактор
 	if s.Session.Level.Rank == 100 {
 		database.DB.Model(&s.Session).Update("dishes", gorm.Expr("dishes + ?", uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))))
 	} else {
