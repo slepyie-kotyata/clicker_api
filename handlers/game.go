@@ -163,7 +163,7 @@ func BuyUpgrade(c echo.Context) error {
 		xp_increase = 0
 	} else {
 		database.DB.Where("rank = ?", session.Level.Rank + 1).Find(&level_xp)
-		xp_increase = percent.Percent(10, int(level_xp.XP))
+		xp_increase = percent.Percent(5, int(level_xp.XP))
 
 	}
 
