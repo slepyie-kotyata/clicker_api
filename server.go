@@ -1,9 +1,10 @@
 package main
 
 import (
-	"clicker_api/handlers"
+	"clicker_api/custom_middleware"
 	"clicker_api/routes"
-	"clicker_api/service"
+	"clicker_api/secret"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -18,15 +19,16 @@ func main() {
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS, echo.PATCH},
 	}))
 
-	game := e.Group("/game", service.LimiterMiddleware())
-	// game := e.Group("/game") //ДЛЯ ДЕБАГА ПРИ ТЕСТИРОВАНИИ УДАЛИТЬ
-	game.Use(service.JWTMiddleware(handlers.Access_secret))
+	game := e.Group("/game", custommiddleware.LimiterMiddleware())
+	game.Use(custommiddleware.JWTMiddleware(secret.Access_secret))
 	
-	refresh := e.Group("/refresh", service.JWTMiddleware(handlers.Refresh_secret))
+	refresh := e.Group("/refresh", custommiddleware.JWTMiddleware(secret.Refresh_secret))
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
-	routes.InitGameRoutes(game)
+	routes.InitSessionRoutes(game)
+	routes.InitUpgradeRoutes(game)
+	routes.InitLevelRoutes(game)
 	routes.InitPassiveWS(e)
 
 	e.Start(":1323")

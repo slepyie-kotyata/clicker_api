@@ -1,4 +1,4 @@
-package handlers
+package secret
 
 import (
 	"clicker_api/environment"

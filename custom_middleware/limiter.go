@@ -1,13 +1,21 @@
-package service
+package custommiddleware
 
 import (
 	"clicker_api/utils"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
 )
+
+var debug = false
+
+func debugLog(format string, a ...interface{}) {
+	if debug {
+		log.Printf(format, a...)
+	}
+}
 
 func LimiterMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -17,17 +25,16 @@ func LimiterMiddleware() echo.MiddlewareFunc {
 			}
 
 			time_header := c.Request().Header.Get("X-timestamp")
-			fmt.Println("time_header ", time_header)
+			debugLog("time_header: %s", time_header)
 
 			request_time := time.UnixMilli(int64(utils.StringToUint(time_header)))
-			fmt.Println("request_time formatted ", request_time)
+			debugLog("request_time: %v", request_time)
 
 			current_time := time.Now()
-			fmt.Println("current_time ", current_time)
+			debugLog("current_time: %v", current_time)
 
 			diff := current_time.Sub(request_time)
-
-			fmt.Println("diff ", diff)
+			debugLog("diff: %v", diff)
 
 			if diff >= time.Second * 2 || diff < 0 {
 				return c.JSON(http.StatusForbidden, map[string]interface{}{

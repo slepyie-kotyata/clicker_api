@@ -1,27 +1,25 @@
 package service
 
 import (
-	"clicker_api/environment"
 	"errors"
-	"net/http"
 	"strings"
 	"time"
+	"clicker_api/secret"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo/v4"
 )
 
 func NewToken(id string, is_access bool) string {
 	var (
-		secret string
+		token_secret string
 		duration time.Duration
 	)
 
 	if is_access {
-		secret = environment.GetVariable("ACCESS_TOKEN_SECRET")
+		token_secret = secret.Access_secret
 		duration = time.Minute * 15
 	} else {
-		secret = environment.GetVariable("REFRESH_TOKEN_SECRET")
+		token_secret = secret.Refresh_secret
 		duration = time.Hour * 168
 	}
 
@@ -30,7 +28,7 @@ func NewToken(id string, is_access bool) string {
 		"exp": time.Now().Add(duration).Unix(),
 	})
 
-	signed_token, err :=  token.SignedString([]byte(secret))
+	signed_token, err :=  token.SignedString([]byte(token_secret))
 	
 	if err != nil {
 		return ""
@@ -95,40 +93,4 @@ func ValidateToken(token_string string, secret string) error {
 	}
 
 	return nil
-}
-
-func JWTMiddleware(secret string) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func (c echo.Context) error {
-			header := c.Request().Header.Get("Authorization")
-			if header == "" {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status": 1,
-					"message": "missing token",
-				})
-			}
-
-			header_parts := strings.Split(header, " ")
-			if len(header_parts) != 2 || header_parts[0] != "Bearer" {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status": 1,
-					"message": "invalid token format",
-				})
-			}
-
-			token := header_parts[1]
-
-			err := ValidateToken(token, secret)
-			if err != nil {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status": 1,
-					"message": err.Error(),
-				})
-			}
-
-			c.Set("id", ExtractIDFromToken(token, secret))
-
-			return next(c)
-		}
-	}
 }

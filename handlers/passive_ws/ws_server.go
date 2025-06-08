@@ -1,10 +1,9 @@
 package passivews
 
 import (
-	"clicker_api/handlers"
+	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -16,11 +15,6 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		log.Printf("WebSocket request origin: %s", origin)
-		
-		if origin == "" { //ДЛЯ ДЕБАГА ПРИ ТЕСТИРОВАНИИ УДАЛИТЬ
-			return true
-		}
 		
 		allowedOrigins := map[string]bool{
 			"wss://clicker.enjine.ru":    	true,
@@ -32,6 +26,7 @@ var upgrader = websocket.Upgrader{
 		return allowedOrigins[origin]
 	},
 }
+
 var session_manager = NewSessionManager()
 
 func ServeWS(c echo.Context) error {
@@ -44,7 +39,7 @@ func ServeWS(c echo.Context) error {
 		})
 	}
 	
-	err := service.ValidateToken(token, handlers.Access_secret)
+	err := service.ValidateToken(token, secret.Access_secret)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"status": "6",
@@ -52,7 +47,7 @@ func ServeWS(c echo.Context) error {
 		})
 	}
 
-	id := utils.StringToUint(service.ExtractIDFromToken(token, handlers.Access_secret))
+	id := utils.StringToUint(service.ExtractIDFromToken(token, secret.Access_secret))
 
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
