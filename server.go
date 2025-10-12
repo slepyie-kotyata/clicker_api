@@ -30,6 +30,7 @@ func main() {
 	routes.InitUpgradeRoutes(game)
 	routes.InitLevelRoutes(game)
 	routes.InitPassiveWS(e)
+	routes.InitWsRoutes(e)
 
 	e.Start(":1323")
 
