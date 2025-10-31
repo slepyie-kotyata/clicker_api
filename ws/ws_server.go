@@ -4,6 +4,7 @@ import (
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -58,9 +59,22 @@ func ServeWs(c echo.Context) error {
 	}
 
 	session_conn := NewSession(conn, id)
+
+	m_data, err := utils.ToJSON(session_conn.session)
+	if err != nil {
+		log.Println("failed to initialize session", err)
+		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "init failed"))
+		conn.Close()
+		return nil
+	}
+
+	message := NewMessage(m_data, SessionAction)
 	
 	go session_conn.readPump()
 	go session_conn.writePump()
+
+	session_conn.messages <- message
+
 
 	return nil
 }
