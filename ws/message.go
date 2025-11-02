@@ -2,28 +2,28 @@ package ws
 
 import "encoding/json"
 
-type ActionType string
+type MessageType string
 const (
-	CookAction = "action_cook"
-	SellAction = "action_sell"
-	BuyAction = "upgrade_buy"
-	ListAction = "upgrade_list"
-	SessionAction = "session"
-	LevelUpAction = "level_up"
-	CheckLevelAction = "level_check"
-	ResetAction = "session_reset"
-	PassiveAction = "action_passive"
-	LeaveAction = "action_leave"
+	Response = "response"
+	Request = "request"
+	KeepAlive = "keep_alive"
+)
+
+type RequestType string
+const (
+	CookRequest = "cook"
+	SellRequest = "sell"
+	BuyRequest = "upgrade_buy"
+	ListRequest = "upgrade_list"
+	SessionRequest = "session"
+	LevelUpRequest = "level_up"
+	CheckLevelRequest = "level_check"
+	ResetRequest = "session_reset"
+	PassiveRequest = "passive"
+	LeaveRequest = "leave"
 )
 
 type Message struct {
-	Action 	ActionType		`json:"action"`
-	Data 	json.RawMessage	`json:"data"`
-}
-
-func NewMessage(data json.RawMessage, action ActionType) Message {
-	return Message{
-		Action: action, 
-		Data: data,
-	}
+	MessageType	MessageType		`json:"message_type"`	
+	Data 		json.RawMessage	`json:"data"`
 }
