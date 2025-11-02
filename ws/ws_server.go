@@ -59,21 +59,23 @@ func ServeWs(c echo.Context) error {
 	}
 
 	session_conn := NewSession(conn, id)
+	data := map[string]interface{}{
+		"action": SessionRequest,
+		"session": session_conn.session,
+	}
 
-	m_data, err := utils.ToJSON(session_conn.session)
+	m_data, err := utils.ToJSON(data)
 	if err != nil {
 		log.Println("failed to initialize session", err)
 		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "init failed"))
 		conn.Close()
 		return nil
 	}
-
-	message := NewMessage(m_data, SessionAction)
 	
 	go session_conn.readPump()
 	go session_conn.writePump()
 
-	session_conn.messages <- message
+	session_conn.messages <- Message{MessageType: Response, Data: m_data}
 
 
 	return nil

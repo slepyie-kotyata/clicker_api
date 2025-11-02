@@ -50,14 +50,8 @@ func (s *SessionConn) close() {
 
 func (s *SessionConn) readPump() {
 	defer s.close()
-
 	s.client.SetReadLimit(max_message_size)
 	s.client.SetReadDeadline(time.Now().Add(pong_wait))
-	s.client.SetPongHandler(func(string) error{
-		log.Println("✅ Pong received from client")
-		s.client.SetReadDeadline(time.Now().Add(pong_wait))
-		return nil
-	})
 
 	for {
 		_, message, err := s.client.ReadMessage()
@@ -68,6 +62,8 @@ func (s *SessionConn) readPump() {
 			return
 		}
 
+		s.client.SetReadDeadline(time.Now().Add(pong_wait))
+
 		var m Message
 		err = json.Unmarshal(message, &m.Data)
 		if err != nil {
@@ -75,6 +71,7 @@ func (s *SessionConn) readPump() {
 			continue
 		}
 
+		s.messages <- m
 	}
 }
 
@@ -88,24 +85,33 @@ func (s *SessionConn) writePump() {
 	for {
 		select {
 		case message, ok := <-s.messages:
-			_ = s.client.SetReadDeadline(time.Now().Add(write_wait))
+			_ = s.client.SetWriteDeadline(time.Now().Add(write_wait))
 			if !ok {
 				_ = s.client.WriteMessage(websocket.CloseMessage, []byte{})
 			}
+
 			byte_message, err := utils.ToJSON(message)
 			if err != nil {
 				return
 			}
+
 			err = s.client.WriteMessage(websocket.TextMessage, byte_message)
 			if err != nil {
 				return
 			}
+
 		case <-ticker.C:
-			_ = s.client.SetWriteDeadline(time.Now().Add(write_wait))
-			err := s.client.WriteMessage(websocket.PingMessage, nil)
+			s.client.SetWriteDeadline(time.Now().Add(write_wait))
+			data, _ := json.Marshal(map[string]string{"data": "keep alive"})
+			message, _ := utils.ToJSON(Message{MessageType: KeepAlive, Data: data})
+			
+			err := s.client.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				return
 			}
+
+			s.client.SetReadDeadline(time.Now().Add(pong_wait))
+
 		case <-s.done:
 			return
 		}
