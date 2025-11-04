@@ -24,6 +24,6 @@ const (
 )
 
 type Message struct {
-	MessageType	MessageType		`json:"message_type"`	
+	MessageType	MessageType		`json:"message_type"`
 	Data 		json.RawMessage	`json:"data"`
 }

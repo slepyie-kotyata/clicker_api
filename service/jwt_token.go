@@ -1,10 +1,11 @@
 package service
 
 import (
+	"clicker_api/secret"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
-	"clicker_api/secret"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -90,6 +91,24 @@ func ValidateToken(token_string string, secret string) error {
 		}
 	} else {
 		return errors.New("invalid or missing expiration time")
+	}
+
+	return nil
+}
+
+func AuthorizeMessage(data json.RawMessage) error {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return errors.New("invalid data")
+	}
+
+	token, ok := payload["token"].(string)
+	if ok {
+		if err := ValidateToken(token, secret.Access_secret); err != nil {
+			return err
+		}
+	} else {
+		return errors.New("invalid data")
 	}
 
 	return nil

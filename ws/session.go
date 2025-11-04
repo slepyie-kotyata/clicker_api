@@ -3,6 +3,7 @@ package ws
 import (
 	"clicker_api/database"
 	"clicker_api/models"
+	"clicker_api/service"
 	"clicker_api/utils"
 	"encoding/json"
 	"log"
@@ -62,16 +63,31 @@ func (s *SessionConn) readPump() {
 			return
 		}
 
-		s.client.SetReadDeadline(time.Now().Add(pong_wait))
-
 		var m Message
-		err = json.Unmarshal(message, &m.Data)
-		if err != nil {
+		if err = json.Unmarshal(message, &m); err != nil {
 			log.Printf("invalid message error: %v", err)
 			continue
 		}
 
-		s.messages <- m
+		switch m.MessageType {
+		case Request:
+			if err = service.AuthorizeMessage(m.Data); err != nil {
+				s.client.SetWriteDeadline(time.Now().Add(write_wait))
+
+				data, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
+				err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: data})
+
+				if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
+					return
+				}
+
+				s.client.SetReadDeadline(time.Now().Add(pong_wait))
+			}
+		case KeepAlive:
+			s.client.SetReadDeadline(time.Now().Add(pong_wait))
+		default:
+			continue
+		}
 	}
 }
 
@@ -102,7 +118,7 @@ func (s *SessionConn) writePump() {
 
 		case <-ticker.C:
 			s.client.SetWriteDeadline(time.Now().Add(write_wait))
-			data, _ := json.Marshal(map[string]string{"data": "keep alive"})
+			data, _ := json.Marshal(map[string]string{"message": "keep alive"})
 			message, _ := utils.ToJSON(Message{MessageType: KeepAlive, Data: data})
 			
 			err := s.client.WriteMessage(websocket.TextMessage, message)
