@@ -71,17 +71,15 @@ func (s *SessionConn) readPump() {
 
 		switch m.MessageType {
 		case Request:
-			if err = service.AuthorizeMessage(m.Data); err != nil {
-				s.client.SetWriteDeadline(time.Now().Add(write_wait))
+			if err = service.AuthorizeMessage(m.Data); err == nil { continue }
 
-				data, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
-				err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: data})
+			s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
-				if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
-					return
-				}
+			data, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
+			err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: data})
 
-				s.client.SetReadDeadline(time.Now().Add(pong_wait))
+			if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
+				return
 			}
 		case KeepAlive:
 			s.client.SetReadDeadline(time.Now().Add(pong_wait))
