@@ -3,7 +3,6 @@ package ws
 import (
 	"clicker_api/database"
 	"clicker_api/models"
-	"clicker_api/service"
 	"clicker_api/utils"
 	"encoding/json"
 	"log"
@@ -48,6 +47,31 @@ func (s *SessionConn) close() {
 	}
 }
 
+//возможное решение
+func (s *SessionConn) sendMessage(m_type MessageType, payload interface{}) error {
+    s.client.SetWriteDeadline(time.Now().Add(write_wait))
+
+    data, err := json.Marshal(map[string]interface{}{"message": payload})
+    if err != nil {
+        return err
+    }
+
+    message, err := utils.ToJSON(Message{
+        MessageType: m_type,
+        Data:        data,
+    })
+    if err != nil {
+        return err
+    }
+
+    if err := s.client.WriteMessage(websocket.TextMessage, message); err != nil {
+        return err
+    }
+
+    s.client.SetReadDeadline(time.Now().Add(pong_wait))
+
+    return nil
+}
 
 func (s *SessionConn) readPump() {
 	defer s.close()
@@ -71,16 +95,22 @@ func (s *SessionConn) readPump() {
 
 		switch m.MessageType {
 		case Request:
-			if err = service.AuthorizeMessage(m.Data); err == nil { continue }
+			request, err := AuthorizeRequest(m.Data) 
+			if err != nil{ 
+				s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
-			s.client.SetWriteDeadline(time.Now().Add(write_wait))
+				response, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
+				err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: response})
 
-			data, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
-			err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: data})
+				if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
+					return
+				}
 
-			if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
-				return
+				s.client.SetReadDeadline(time.Now().Add(pong_wait))
 			}
+
+			s.InitAction(request)
+			
 		case KeepAlive:
 			s.client.SetReadDeadline(time.Now().Add(pong_wait))
 		default:
@@ -130,6 +160,19 @@ func (s *SessionConn) writePump() {
 			return
 		}
 
+	}
+}
+
+func (s *SessionConn) InitAction(m *RequestData) {
+	switch m.Action {
+	case CookRequest:
+		
+	case SellRequest:
+
+	case LeaveRequest:
+		s.close()
+	default:
+		return
 	}
 }
 
