@@ -5,6 +5,7 @@ import (
 	"clicker_api/models"
 	"clicker_api/utils"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -61,6 +62,8 @@ func (s *SessionConn) readPump() {
 			return
 		}
 
+		fmt.Print("message has been recieved")
+
 		var m Message
 		if err = json.Unmarshal(message, &m); err != nil {
 			log.Printf("invalid message error: %v", err)
@@ -82,6 +85,9 @@ func (s *SessionConn) readPump() {
 
 				s.client.SetReadDeadline(time.Now().Add(pong_wait))
 			}
+
+			fmt.Print("message has been authorized")
+
 
 			s.InitAction(request)
 			
@@ -127,6 +133,8 @@ func (s *SessionConn) writePump() {
 			if err != nil {
 				return
 			}
+
+			fmt.Println("ping sent")
 
 			s.client.SetReadDeadline(time.Now().Add(pong_wait))
 

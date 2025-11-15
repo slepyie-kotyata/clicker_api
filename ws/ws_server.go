@@ -59,11 +59,15 @@ func ServeWs(c echo.Context) error {
 		return err
 	}
 
+	fmt.Println("connection upgraded")
+
 	session_conn := NewSession(conn, id)
 	data := map[string]interface{}{
 		"action": SessionRequest,
 		"session": session_conn.session,
 	}
+
+	fmt.Println("session created")
 
 	m_data, err := utils.ToJSON(data)
 	if err != nil {
