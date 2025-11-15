@@ -62,7 +62,7 @@ func (s *SessionConn) readPump() {
 			return
 		}
 
-		fmt.Print("message has been recieved")
+		fmt.Println("message has been recieved")
 
 		var m Message
 		if err = json.Unmarshal(message, &m); err != nil {
@@ -86,7 +86,7 @@ func (s *SessionConn) readPump() {
 				s.client.SetReadDeadline(time.Now().Add(pong_wait))
 			}
 
-			fmt.Print("message has been authorized")
+			log.Println("message has been authorized")
 
 
 			s.InitAction(request)
@@ -134,7 +134,7 @@ func (s *SessionConn) writePump() {
 				return
 			}
 
-			fmt.Println("ping sent")
+			log.Println("ping sent")
 
 			s.client.SetReadDeadline(time.Now().Add(pong_wait))
 
