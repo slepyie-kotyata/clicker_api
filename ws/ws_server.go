@@ -4,6 +4,7 @@ import (
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -71,12 +72,13 @@ func ServeWs(c echo.Context) error {
 		conn.Close()
 		return nil
 	}
+
+	fmt.Println("session has been initialized!")
 	
 	go session_conn.readPump()
 	go session_conn.writePump()
 
 	session_conn.messages <- Message{MessageType: Response, Data: m_data}
-
 
 	return nil
 }
