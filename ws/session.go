@@ -47,32 +47,6 @@ func (s *SessionConn) close() {
 	}
 }
 
-//возможное решение
-func (s *SessionConn) sendMessage(m_type MessageType, payload interface{}) error {
-    s.client.SetWriteDeadline(time.Now().Add(write_wait))
-
-    data, err := json.Marshal(map[string]interface{}{"message": payload})
-    if err != nil {
-        return err
-    }
-
-    message, err := utils.ToJSON(Message{
-        MessageType: m_type,
-        Data:        data,
-    })
-    if err != nil {
-        return err
-    }
-
-    if err := s.client.WriteMessage(websocket.TextMessage, message); err != nil {
-        return err
-    }
-
-    s.client.SetReadDeadline(time.Now().Add(pong_wait))
-
-    return nil
-}
-
 func (s *SessionConn) readPump() {
 	defer s.close()
 	s.client.SetReadLimit(max_message_size)
