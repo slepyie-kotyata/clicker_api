@@ -4,7 +4,6 @@ import (
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -59,7 +58,7 @@ func ServeWs(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("connection upgraded")
+	log.Println("connection upgraded")
 
 	session_conn := NewSession(conn, id)
 	data := map[string]interface{}{
@@ -67,7 +66,7 @@ func ServeWs(c echo.Context) error {
 		"session": session_conn.session,
 	}
 
-	fmt.Println("session created")
+	log.Println("session created")
 
 	m_data, err := utils.ToJSON(data)
 	if err != nil {
@@ -77,7 +76,7 @@ func ServeWs(c echo.Context) error {
 		return nil
 	}
 
-	fmt.Println("session has been initialized!")
+	log.Println("session has been initialized!")
 	
 	go session_conn.readPump()
 	go session_conn.writePump()
