@@ -93,6 +93,7 @@ func (s *SessionConn) readPump() {
 			
 		case KeepAlive:
 			s.client.SetReadDeadline(time.Now().Add(pong_wait))
+			log.Println("pong time updated")
 		default:
 			continue
 		}
