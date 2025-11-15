@@ -23,7 +23,7 @@ func NewSession(conn *websocket.Conn, id uint) *SessionConn {
 	return &SessionConn{
 		session: 	database.InitSession(id),
 		client: 	conn,
-		messages: 	make(chan Message),
+		messages: 	make(chan Message, 10),
 		done: 		make(chan struct{}),
 	}
 }
@@ -46,6 +46,15 @@ func (s *SessionConn) close() {
 		close(s.done)
 		_ = s.client.Close()
 	}
+}
+
+func (s *SessionConn) closeWithCode(code int, msg string) {
+    _ = s.client.WriteControl(
+        websocket.CloseMessage,
+        websocket.FormatCloseMessage(code, msg),
+        time.Now().Add(time.Second),
+    )
+    s.client.Close()
 }
 
 func (s *SessionConn) readPump() {
@@ -110,20 +119,22 @@ func (s *SessionConn) writePump() {
 	for {
 		select {
 		case message, ok := <-s.messages:
-			_ = s.client.SetWriteDeadline(time.Now().Add(write_wait))
-			if !ok {
-				_ = s.client.WriteMessage(websocket.CloseMessage, []byte{})
-			}
+            s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
-			byte_message, err := utils.ToJSON(message)
-			if err != nil {
-				return
-			}
+            if !ok {
+                s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
+                return
+            }
 
-			err = s.client.WriteMessage(websocket.TextMessage, byte_message)
-			if err != nil {
-				return
-			}
+            byte_message, err := utils.ToJSON(message)
+            if err != nil {
+                s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
+                return
+            }
+
+            if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
+                return
+            }
 
 		case <-ticker.C:
 			s.client.SetWriteDeadline(time.Now().Add(write_wait))
