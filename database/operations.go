@@ -45,7 +45,7 @@ func InitSession(id uint) *models.Session {
 		DB.Create(&session_upgrade)
 	}
 	
-	DB.Preload("Prestige").Preload("Level").Where("user_id = ?", id).First(&new_session)
+	DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 
 	log.Printf("done!")
 	

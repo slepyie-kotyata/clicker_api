@@ -24,18 +24,19 @@ const (
 	CheckLevelRequest = "level_check"
 	ResetRequest = "session_reset"
 	PassiveRequest = "passive"
-	LeaveRequest = "leave"
+	ErrorRequest = "error"
 )
 
 type Message struct {
 	MessageType	MessageType		`json:"message_type"`
+	RequestID	string			`json:"request_id"`
+	RequestType RequestType		`json:"request_type"`
 	Data 		json.RawMessage	`json:"data"`
 }
 
 type RequestData struct {
-	Token  	string 		`json:"token"`
-	Action 	RequestType	`json:"request_type"`
-	Param 	int			`json:"param,omitempty"`
+	Token  		string 		`json:"token"`
+	Param 		int			`json:"param,omitempty"`
 }
 
 func AuthorizeRequest(request_data json.RawMessage) (*RequestData, error) {
