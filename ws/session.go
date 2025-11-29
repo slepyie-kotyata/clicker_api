@@ -3,6 +3,8 @@ package ws
 import (
 	"clicker_api/database"
 	"clicker_api/models"
+	"clicker_api/secret"
+	"clicker_api/service"
 	"clicker_api/utils"
 	"encoding/json"
 	"fmt"
@@ -19,11 +21,11 @@ type SessionConn struct {
 	done      		chan struct{}
 }
 
-func NewSession(conn *websocket.Conn, id uint) *SessionConn {
+func NewSession(conn *websocket.Conn) *SessionConn {
 	return &SessionConn{
-		session: 	database.InitSession(id),
+		session: 	nil,
 		client: 	conn,
-		messages: 	make(chan Message, 10),
+		messages: make(chan Message, 10),
 		done: 		make(chan struct{}),
 	}
 }
@@ -49,12 +51,14 @@ func (s *SessionConn) close() {
 }
 
 func (s *SessionConn) closeWithCode(code int, msg string) {
-    _ = s.client.WriteControl(
-        websocket.CloseMessage,
-        websocket.FormatCloseMessage(code, msg),
-        time.Now().Add(time.Second),
-    )
-    s.client.Close()
+  fmt.Println("exiting session...")
+  _ = s.client.WriteControl(
+      websocket.CloseMessage,
+      websocket.FormatCloseMessage(code, msg),
+      time.Now().Add(time.Second),
+  )
+  s.client.Close()
+  fmt.Println("done!")
 }
 
 func (s *SessionConn) readPump() {
@@ -86,24 +90,25 @@ func (s *SessionConn) readPump() {
 
 		switch m.MessageType {
 		case Request:
-			request, err := AuthorizeRequest(m.Data) 
+			data, err := AuthorizeRequest(m.Data) 
 			if err != nil{ 
 				s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
 				response, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
-				err_message, _ := utils.ToJSON(Message{MessageType: Response, Data: response})
+				message, _ := utils.ToJSON(Message{
+          MessageType: Response, 
+          RequestID: m.RequestID,
+          RequestType: ErrorRequest,
+          Data: response,
+        })
 
-				if err = s.client.WriteMessage(websocket.TextMessage, err_message); err != nil {
+				if err = s.client.WriteMessage(websocket.TextMessage, message); err != nil {
 					return
 				}
-
-				s.client.SetReadDeadline(time.Now().Add(pong_wait))
 			}
 
 			log.Println("message has been authorized")
-
-
-			s.InitAction(request)
+			s.InitAction(&m, data)
 		default:
 			continue
 		}
@@ -151,14 +156,24 @@ func (s *SessionConn) writePump() {
 	}
 }
 
-func (s *SessionConn) InitAction(m *RequestData) {
-	switch m.Action {
-	case CookRequest:
-		
-	case SellRequest:
+func (s *SessionConn) InitAction(m *Message, data *RequestData) {
+	switch m.RequestType {
+	case SessionRequest:
+		id := utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
+    s.session = database.InitSession(id)
 
-	case LeaveRequest:
-		s.close()
+    data, _ := json.Marshal(map[string]interface{}{"session": s.session})
+
+    message, _ := utils.ToJSON(Message{
+			MessageType: Response,
+			RequestID:   m.RequestID,
+			RequestType: m.RequestType,
+			Data:        data,
+		})
+
+    if err := s.client.WriteMessage(websocket.TextMessage, message); err != nil {
+			return
+		}
 	default:
 		return
 	}
