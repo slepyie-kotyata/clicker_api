@@ -37,19 +37,24 @@ func ServeWS(c echo.Context) error {
 			"message": "missing token",
 		})
 	}
-	
+	fmt.Println("TOKEN RECEIVED:", token)
+
 	err := service.ValidateToken(token, secret.Access_secret)
 	if err != nil {
+		fmt.Println("ValidateToken error:", err)
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"status": "6",
 			"message": err.Error(),
 		})
 	}
-
+	
 	id := utils.StringToUint(service.ExtractIDFromToken(token, secret.Access_secret))
+	fmt.Println("EXTRACTED USER ID:", id)
 
+	fmt.Println("UPGRADING WS...")
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
+		fmt.Println("UPGRADE RESULT:", err)
 		c.Logger().Error(err)
 		return err
 	}
