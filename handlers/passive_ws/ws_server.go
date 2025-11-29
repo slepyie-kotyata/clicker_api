@@ -17,8 +17,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 		allowedOrigins := map[string]bool{
-			"wss://clicker.enjine.ru":    	true,
-			"ws://localhost:4200":        	true,
 			"https://clicker.enjine.ru": 	true,
 			"http://localhost:4200":     	true,
 		}
