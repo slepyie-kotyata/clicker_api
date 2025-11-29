@@ -11,7 +11,6 @@ type MessageType string
 const (
 	Response = "response"
 	Request = "request"
-	KeepAlive = "keep_alive"
 )
 
 type RequestType string
