@@ -7,5 +7,5 @@ import (
 )
 
 func InitWsRoutes(e *echo.Echo) {
-	e.GET("/ws/", ws.ServeWs)
+	e.GET("/ws", ws.ServeWs)
 }
