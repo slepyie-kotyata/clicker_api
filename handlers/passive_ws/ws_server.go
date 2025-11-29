@@ -16,6 +16,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 4096,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
+		fmt.Println("ORIGIN:", origin)
 		allowedOrigins := map[string]bool{
 			"https://clicker.enjine.ru": 	true,
 			"http://localhost:4200":     	true,
@@ -28,7 +29,6 @@ var upgrader = websocket.Upgrader{
 var session_manager = NewSessionManager()
 
 func ServeWS(c echo.Context) error {
-	fmt.Println("ORIGIN:", c.Request().Header.Get("Origin"))
 	token := c.QueryParam("token")
 
 	if token == "" {
