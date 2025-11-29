@@ -61,6 +61,11 @@ func (s *SessionConn) readPump() {
 	defer s.close()
 	s.client.SetReadLimit(max_message_size)
 	s.client.SetReadDeadline(time.Now().Add(pong_wait))
+  s.client.SetPongHandler(func(string) error{
+		log.Println("✅ Pong received from client")
+		s.client.SetReadDeadline(time.Now().Add(pong_wait))
+		return nil
+	})
 
 	for {
 		_, message, err := s.client.ReadMessage()
@@ -99,10 +104,6 @@ func (s *SessionConn) readPump() {
 
 
 			s.InitAction(request)
-			
-		case KeepAlive:
-			s.client.SetReadDeadline(time.Now().Add(pong_wait))
-			log.Println("pong time updated")
 		default:
 			continue
 		}
@@ -119,37 +120,30 @@ func (s *SessionConn) writePump() {
 	for {
 		select {
 		case message, ok := <-s.messages:
-            s.client.SetWriteDeadline(time.Now().Add(write_wait))
+      s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
-            if !ok {
-                s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
-                return
-            }
+      if !ok {
+        s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
+        return
+      }
 
-            byte_message, err := utils.ToJSON(message)
-            if err != nil {
-                s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
-                return
-            }
+      byte_message, err := utils.ToJSON(message)
+      if err != nil {
+        s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
+        return
+      }
 
-            if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
-                return
-            }
+      if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
+        return
+      }
 
 		case <-ticker.C:
 			s.client.SetWriteDeadline(time.Now().Add(write_wait))
-			data, _ := json.Marshal(map[string]string{"message": "keep alive"})
-			message, _ := utils.ToJSON(Message{MessageType: KeepAlive, Data: data})
-			
-			err := s.client.WriteMessage(websocket.TextMessage, message)
+			err := s.client.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
 			if err != nil {
 				return
 			}
-
 			log.Println("ping sent")
-
-			s.client.SetReadDeadline(time.Now().Add(pong_wait))
-
 		case <-s.done:
 			return
 		}
