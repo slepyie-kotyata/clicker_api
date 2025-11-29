@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func ServeWs(c echo.Context) error {
-	token := c.QueryParam("token")
+	token := c.Request().Header.Get("Sec-Websocket-Protocol")
 
 	if token == "" {
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
@@ -62,7 +62,7 @@ func ServeWs(c echo.Context) error {
 
 	session_conn := NewSession(conn, id)
 	data := map[string]interface{}{
-		"action": SessionRequest,
+		"request_type": SessionRequest,
 		"session": session_conn.session,
 	}
 

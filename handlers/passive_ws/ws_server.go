@@ -51,7 +51,7 @@ func ServeWS(c echo.Context) error {
 	id := utils.StringToUint(service.ExtractIDFromToken(token, secret.Access_secret))
 	fmt.Println("EXTRACTED USER ID:", id)
 
-	fmt.Println("UPGRADING WS...")
+	// fmt.Println("UPGRADING WS...")
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		fmt.Println("UPGRADE RESULT:", err)
