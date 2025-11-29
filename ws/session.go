@@ -7,6 +7,7 @@ import (
 	"clicker_api/service"
 	"clicker_api/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -41,6 +42,7 @@ const (
 )
 
 func (s *SessionConn) close() {
+  fmt.Println("exiting session...")
 	select {
 	case <-s.done:
 		return
@@ -48,17 +50,16 @@ func (s *SessionConn) close() {
 		close(s.done)
 		_ = s.client.Close()
 	}
+  fmt.Println("done!")
 }
 
 func (s *SessionConn) closeWithCode(code int, msg string) {
-  fmt.Println("exiting session...")
   _ = s.client.WriteControl(
       websocket.CloseMessage,
       websocket.FormatCloseMessage(code, msg),
       time.Now().Add(time.Second),
   )
   s.client.Close()
-  fmt.Println("done!")
 }
 
 func (s *SessionConn) readPump() {
@@ -74,11 +75,25 @@ func (s *SessionConn) readPump() {
 	for {
 		_, message, err := s.client.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("unexpected close error: %v", err)
-			}
-			return
-		}
+      var closeErr *websocket.CloseError
+      
+      if errors.As(err, &closeErr) {
+        switch closeErr.Code {
+        case websocket.CloseNormalClosure:
+          log.Println("Normal close (1000)")
+        case websocket.CloseGoingAway:
+          log.Println("Going away (1001)")
+        case websocket.CloseAbnormalClosure:
+          log.Println("Abnormal close (1006)")
+        default:
+          log.Printf("Close code=%d text=%s", closeErr.Code, closeErr.Text)
+        }
+        return
+      }
+
+      log.Printf("Client disconnected: %v", err)
+      return
+    }
 
 		fmt.Println("message has been recieved")
 
