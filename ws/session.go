@@ -76,25 +76,25 @@ func (s *SessionConn) readPump() {
 	for {
 		_, message, err := s.client.ReadMessage()
 		if err != nil {
-      var closeErr *websocket.CloseError
+      		var closeErr *websocket.CloseError
       
-      if errors.As(err, &closeErr) {
-        switch closeErr.Code {
-        case websocket.CloseNormalClosure:
-          log.Println("Normal close (1000)")
-        case websocket.CloseGoingAway:
-          log.Println("Going away (1001)")
-        case websocket.CloseAbnormalClosure:
-          log.Println("Abnormal close (1006)")
-        default:
-          log.Printf("Close code=%d text=%s", closeErr.Code, closeErr.Text)
-        }
-        return
-      }
+      		if errors.As(err, &closeErr) {
+        		switch closeErr.Code {
+        		case websocket.CloseNormalClosure:
+          			log.Println("Normal close (1000)")
+        		case websocket.CloseGoingAway:
+          			log.Println("Going away (1001)")
+       			case websocket.CloseAbnormalClosure:
+          			log.Println("Abnormal close (1006)")
+        		default:
+          			log.Printf("Close code=%d text=%s", closeErr.Code, closeErr.Text)
+        		}
+        		return
+      		}
 
-      log.Printf("Client disconnected: %v", err)
-      return
-    }
+      		log.Printf("Client disconnected: %v", err)
+      		return
+    	}
 
 		fmt.Println("message has been recieved")
 
