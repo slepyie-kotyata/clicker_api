@@ -15,29 +15,30 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+//TODO:разработать хранилище данных сессии
+
 type SessionConn struct {
 	session  		*models.Session
 	client   		*websocket.Conn
+	user_id    		uint
 	messages 		chan Message
 	done      		chan struct{}
 }
 
 func NewSession(conn *websocket.Conn) *SessionConn {
 	return &SessionConn{
-		session: 	nil,
-		client: 	conn,
-		messages: make(chan Message, 10),
-		done: 		make(chan struct{}),
+		session: 		nil,
+		client: 		conn,
+		user_id: 		0,
+		messages: 		make(chan Message, 10),
+		done: 			make(chan struct{}),
 	}
 }
 
 const (
 	write_wait = 10 * time.Second
-
 	pong_wait = 60 * time.Second
-
 	ping_period = (pong_wait * 9) / 10
-
 	max_message_size = 10000
 )
 
@@ -66,7 +67,7 @@ func (s *SessionConn) readPump() {
 	defer s.close()
 	s.client.SetReadLimit(max_message_size)
 	s.client.SetReadDeadline(time.Now().Add(pong_wait))
-  s.client.SetPongHandler(func(string) error{
+  	s.client.SetPongHandler(func(string) error{
 		log.Println("✅ Pong received from client")
 		s.client.SetReadDeadline(time.Now().Add(pong_wait))
 		return nil
@@ -108,21 +109,31 @@ func (s *SessionConn) readPump() {
 			data, err := AuthorizeRequest(m.Data) 
 			if err != nil{ 
 				s.client.SetWriteDeadline(time.Now().Add(write_wait))
+				message, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
 
-				response, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
-				message, _ := utils.ToJSON(Message{
-          MessageType: Response, 
-          RequestID: m.RequestID,
-          RequestType: ErrorRequest,
-          Data: response,
-        })
-
-				if err = s.client.WriteMessage(websocket.TextMessage, message); err != nil {
-					return
+				hub.incoming <- HubEvent{
+					Type: BroadcastToConnection,
+					UserID: s.user_id,
+					Session: s,
+					Message: Message{
+          				MessageType: Response, 
+          				RequestID: m.RequestID,
+          				RequestType: ErrorRequest,
+          				Data: message,
+        			},
 				}
 			}
 
 			log.Println("message has been authorized")
+
+			if s.user_id == 0 {
+				s.user_id = utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
+				hub.incoming <- HubEvent{
+					Type:    RegisterConnection,
+        			UserID:  s.user_id,
+        			Session: s,
+				}
+			}
 			s.InitAction(&m, data)
 		default:
 			continue
@@ -140,22 +151,22 @@ func (s *SessionConn) writePump() {
 	for {
 		select {
 		case message, ok := <-s.messages:
-      s.client.SetWriteDeadline(time.Now().Add(write_wait))
+      		s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
-      if !ok {
-        s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
-        return
-      }
+      		if !ok {
+        	s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
+        		return
+      		}
 
-      byte_message, err := utils.ToJSON(message)
-      if err != nil {
-        s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
-        return
-      }
+      		byte_message, err := utils.ToJSON(message)
+      		if err != nil {
+        		s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
+        		return
+      		}
 
-      if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
-        return
-      }
+      		if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
+        		return
+      		}
 
 		case <-ticker.C:
 			s.client.SetWriteDeadline(time.Now().Add(write_wait))
@@ -174,21 +185,22 @@ func (s *SessionConn) writePump() {
 func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
-		id := utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
-    s.session = database.InitSession(id)
+    	s.session = database.InitSession(s.user_id)
 
-    data, _ := json.Marshal(map[string]interface{}{"session": s.session})
+    	data, _ := json.Marshal(map[string]interface{}{"session": s.session})
 
-    message, _ := utils.ToJSON(Message{
-			MessageType: Response,
-			RequestID:   m.RequestID,
-			RequestType: m.RequestType,
-			Data:        data,
-		})
-
-    if err := s.client.WriteMessage(websocket.TextMessage, message); err != nil {
-			return
+		hub.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: m.RequestType,
+				Data:        data,
+			},
 		}
+
 	default:
 		return
 	}

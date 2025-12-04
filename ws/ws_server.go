@@ -19,8 +19,6 @@ var upgrader = websocket.Upgrader{
 		}
 		
 		allowedOrigins := map[string]bool{
-			"wss://clicker.enjine.ru":    	true,
-			"ws://localhost:4200":        	true,
 			"https://clicker.enjine.ru": 	true,
 			"http://localhost:4200":     	true,
 		}
@@ -28,6 +26,8 @@ var upgrader = websocket.Upgrader{
 		return allowedOrigins[origin]
 	},
 }
+
+var hub = NewHub()
 
 func ServeWs(c echo.Context) error {
 	// token := c.Request().Header.Get("Sec-Websocket-Protocol")
@@ -77,6 +77,8 @@ func ServeWs(c echo.Context) error {
 	
 	go session_conn.readPump()
 	go session_conn.writePump()
+
+	go hub.Run()
 
 	// session_conn.messages <- Message{MessageType: Response, Data: m_data}
 
