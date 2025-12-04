@@ -13,7 +13,7 @@ func InitSession(id uint) *models.Session {
 
 	log.Printf("loading...")
 	
-	DB.Preload("Prestige").Preload("Level").Where("user_id = ?", id).First(&session)
+	DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	DB.Select("email").First(&user, id)
 	
 	if session.ID > 0 {
