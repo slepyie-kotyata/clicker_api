@@ -35,8 +35,6 @@ func InitGame(c echo.Context) error {
 	new_session := models.Session{
 		Money: 0,
 		Dishes: 0,
-		PrestigeValue: 0,
-		PrestigeBoost: 0,
 		UserID: id,
 		Level: &models.Level{},
 		Prestige: &models.Prestige{},
@@ -115,7 +113,7 @@ func SellClick(c echo.Context) error {
 
 	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
 	
-	prestige_boost := session.PrestigeBoost
+	prestige_boost := session.Prestige.AccumulatedValue
 	if prestige_boost == 0 {
 		prestige_boost = 1
 	}

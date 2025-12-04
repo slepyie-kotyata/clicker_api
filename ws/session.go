@@ -187,7 +187,35 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case SessionRequest:
     	s.session = database.InitSession(s.user_id)
 
-    	data, _ := json.Marshal(map[string]interface{}{"session": s.session})
+    	data, _ := json.Marshal(map[string]interface{}{"session": SessionResponse{
+			UserID: s.session.UserID,
+			UserEmail: s.session.UserEmail,
+			Money: s.session.Money,
+			Dishes: s.session.Dishes,
+			Level: struct {
+				Rank uint    `json:"rank"`
+				XP   float64 `json:"xp"`
+			}{
+				Rank: s.session.Level.Rank,
+				XP:   s.session.Level.XP,
+			},
+			Prestige: struct {
+				CurrentValue       float64 `json:"current_value"`
+				CurrentBoostValue  float64 `json:"current_boost_value"`
+				AccumulatedValue   float64 `json:"accumulated_value"`
+			}{
+				CurrentValue:      s.session.Prestige.CurrentValue,
+				CurrentBoostValue: s.session.Prestige.CurrentBoostValue,
+				AccumulatedValue:  s.session.Prestige.AccumulatedValue,
+			},
+			Upgrades: struct {
+				Avaliable []service.FilteredUpgrade `json:"avaliable"`
+				Current   []service.FilteredUpgrade `json:"current"`
+			}{
+				Avaliable: service.FilterUpgrades(*s.session, false),
+				Current: service.FilterUpgrades(*s.session, true),
+			},
+		}})
 
 		hub.incoming <- HubEvent{
 			Type: BroadcastToConnection,

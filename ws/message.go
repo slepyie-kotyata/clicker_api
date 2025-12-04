@@ -39,6 +39,26 @@ type RequestData struct {
 	Param 		int			`json:"param,omitempty"`
 }
 
+type SessionResponse struct {
+	UserID     		uint		`json:"user_id"`
+	UserEmail 		string 		`json:"user_email"`
+	Money      		uint		`json:"money"`
+	Dishes     		uint		`json:"dishes"`
+	Level      		struct {
+		Rank		uint	`json:"rank"`	
+		XP			float64	`json:"xp"`
+	}	`json:"level"`
+	Prestige   		struct {
+		CurrentValue 		float64		`json:"current_value"`
+		CurrentBoostValue 	float64		`json:"current_boost_value"`
+		AccumulatedValue   	float64		`json:"accumulated_value"`
+	}   `json:"prestige"`
+	Upgrades   		struct {
+		Avaliable	[]service.FilteredUpgrade	`json:"avaliable"`
+		Current 	[]service.FilteredUpgrade	`json:"current"`
+	}   `json:"upgrades"`
+}
+
 func AuthorizeRequest(request_data json.RawMessage) (*RequestData, error) {
 	var data RequestData
 	if err := json.Unmarshal(request_data, &data); err != nil {

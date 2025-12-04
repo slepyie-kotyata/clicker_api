@@ -57,7 +57,7 @@ func (s *Session) UpdateSessionState(seconds uint) {
 		return
 	}
 
-	prestige_boost := s.Session.PrestigeBoost
+	prestige_boost := s.Session.Prestige.AccumulatedValue
 
 	if prestige_boost == 0 {
 		prestige_boost = 1

@@ -24,8 +24,6 @@ func InitSession(id uint) *models.Session {
 	new_session := models.Session{
 		Money: 0,
 		Dishes: 0,
-		PrestigeValue: 0,
-		PrestigeBoost: 0,
 		UserID: id,
 		UserEmail: user.Email,
 		Level: &models.Level{},
@@ -33,6 +31,7 @@ func InitSession(id uint) *models.Session {
 	}
 	DB.Create(&new_session)
 	
+
 	var upgrades []models.Upgrade
 	DB.Find(&upgrades)
 	
