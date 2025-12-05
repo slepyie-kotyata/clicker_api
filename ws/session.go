@@ -44,6 +44,14 @@ const (
 
 func (s *SessionConn) close() {
   	fmt.Println("exiting session...")
+	if s.user_id != 0 {
+		hub.incoming <- HubEvent{
+        	Type:    UnregisterConnection,
+        	UserID:  s.user_id,
+        	Session: s,
+    	}
+	}
+
 	select {
 	case <-s.done:
 		return
@@ -125,13 +133,6 @@ func (s *SessionConn) readPump() {
 				continue
 			}
 
-			log.Println("message has been authorized")
-			log.Println("data:", data)
-			log.Println("hub:", hub)
-			log.Println("hub.incoming:", hub.incoming)
-			log.Println("s:", s)
-			log.Println("s.user_id:", s.user_id)
-			log.Println("TOKEN:", data.Token)
 			if s.user_id == 0 {
 				s.user_id = utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
 				hub.incoming <- HubEvent{
@@ -234,7 +235,19 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 				Data:        data,
 			},
 		}
-
+	case CookRequest:
+		data, _ := json.Marshal(map[string]interface{}{"message": "he's cookin"})
+		hub.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: m.RequestType,
+				Data:        data,
+			},
+		}
 	default:
 		return
 	}
