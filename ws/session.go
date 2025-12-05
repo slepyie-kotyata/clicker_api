@@ -135,6 +135,7 @@ func (s *SessionConn) readPump() {
 				hub.incoming <- HubEvent{
 					Type:    RegisterConnection,
         			UserID:  s.user_id,
+					Session: s,
 				}
 			}
 			s.InitAction(&m, data)
