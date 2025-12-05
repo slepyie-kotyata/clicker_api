@@ -124,7 +124,12 @@ func (s *SessionConn) readPump() {
 			}
 
 			log.Println("message has been authorized")
-
+			log.Println("data:", data)
+			log.Println("hub:", hub)
+			log.Println("hub.incoming:", hub.incoming)
+			log.Println("s:", s)
+			log.Println("s.user_id:", s.user_id)
+			log.Println("TOKEN:", data.Token)
 			if s.user_id == 0 {
 				s.user_id = utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
 				hub.incoming <- HubEvent{
