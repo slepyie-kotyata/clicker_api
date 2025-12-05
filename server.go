@@ -4,7 +4,6 @@ import (
 	"clicker_api/custom_middleware"
 	"clicker_api/routes"
 	"clicker_api/secret"
-	"clicker_api/ws"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
