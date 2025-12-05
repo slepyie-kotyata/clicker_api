@@ -45,6 +45,7 @@ const (
 func (s *SessionConn) close() {
   	fmt.Println("exiting session...")
 	if s.user_id != 0 {
+		fmt.Println("unregistered from hub")
 		hub.incoming <- HubEvent{
         	Type:    UnregisterConnection,
         	UserID:  s.user_id,
