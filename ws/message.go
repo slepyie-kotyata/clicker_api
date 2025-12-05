@@ -54,7 +54,7 @@ type SessionResponse struct {
 		AccumulatedValue   	float64		`json:"accumulated_value"`
 	}   `json:"prestige"`
 	Upgrades   		struct {
-		Avaliable	[]service.FilteredUpgrade	`json:"avaliable"`
+		Available	[]service.FilteredUpgrade	`json:"available"`
 		Current 	[]service.FilteredUpgrade	`json:"current"`
 	}   `json:"upgrades"`
 }
