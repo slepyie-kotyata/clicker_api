@@ -12,6 +12,10 @@ import (
 func JWTMiddleware(secret string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if c.Request().Method == http.MethodOptions {
+                return next(c)
+            }
+			
 			header := c.Request().Header.Get("Authorization")
 			if header == "" {
 				return c.JSON(http.StatusUnauthorized, map[string]interface{}{

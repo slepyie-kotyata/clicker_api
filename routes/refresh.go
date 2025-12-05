@@ -8,4 +8,7 @@ import (
 
 func InitRefreshRoute(refresh *echo.Group) {
 	refresh.POST("", handlers.RefreshTokens)
+	refresh.OPTIONS("", func(c echo.Context) error {
+    	return c.NoContent(200)
+	})
 }
