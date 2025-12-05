@@ -1,5 +1,7 @@
 package ws
 
+import "fmt"
+
 type Hub struct {
     incoming chan HubEvent
     sessions map[uint]map[*SessionConn]bool
@@ -35,6 +37,8 @@ func (h *Hub) Run() {
             }
             h.sessions[event.UserID][event.Session] = true
 
+            fmt.Println(len(h.sessions[event.UserID]))
+
         case BroadcastToConnection:
             if sessions, ok := h.sessions[event.UserID]; ok {
                 for s := range sessions {
@@ -54,6 +58,7 @@ func (h *Hub) Run() {
                     delete(h.sessions, event.UserID)
                 }
             }
+            fmt.Println(len(h.sessions[event.UserID]))
         }
     }
 }

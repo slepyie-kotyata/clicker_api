@@ -130,7 +130,6 @@ func (s *SessionConn) readPump() {
 				if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
 					return
 				}
-
 				continue
 			}
 

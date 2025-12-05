@@ -25,13 +25,12 @@ func InitSession(id uint) *models.Session {
 		Money: 0,
 		Dishes: 0,
 		UserID: id,
-		UserEmail: user.Email,
 		Level: &models.Level{},
 		Prestige: &models.Prestige{},
 	}
+	
 	DB.Create(&new_session)
 	
-
 	var upgrades []models.Upgrade
 	DB.Find(&upgrades)
 	
@@ -43,6 +42,8 @@ func InitSession(id uint) *models.Session {
 		}
 		DB.Create(&session_upgrade)
 	}
+	
+	new_session.UserEmail = user.Email
 	
 	DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&new_session)
 
