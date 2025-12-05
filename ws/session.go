@@ -209,10 +209,10 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 				AccumulatedValue:  s.session.Prestige.AccumulatedValue,
 			},
 			Upgrades: struct {
-				Avaliable []service.FilteredUpgrade `json:"avaliable"`
+				Available []service.FilteredUpgrade `json:"available"`
 				Current   []service.FilteredUpgrade `json:"current"`
 			}{
-				Avaliable: service.FilterUpgrades(*s.session, false),
+				Available: service.FilterUpgrades(*s.session, false),
 				Current: service.FilterUpgrades(*s.session, true),
 			},
 		}})
