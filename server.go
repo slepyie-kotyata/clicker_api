@@ -15,8 +15,11 @@ import (
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"https://clicker.enjine.ru", "http://localhost:4200"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS, echo.PATCH},
+    	AllowOrigins: []string{"https://clicker.enjine.ru", "http://localhost:4200"},
+    	AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS, echo.PATCH},
+    	AllowHeaders: []string{"Content-Type", "Authorization"},
+    	ExposeHeaders: []string{"Authorization"},
+    	AllowCredentials: true,
 	}))
 
 	game := e.Group("/game", custommiddleware.LimiterMiddleware())
