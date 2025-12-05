@@ -43,7 +43,7 @@ const (
 )
 
 func (s *SessionConn) close() {
-  fmt.Println("exiting session...")
+  	fmt.Println("exiting session...")
 	select {
 	case <-s.done:
 		return
@@ -51,16 +51,16 @@ func (s *SessionConn) close() {
 		close(s.done)
 		_ = s.client.Close()
 	}
-  fmt.Println("done!")
+  	fmt.Println("done!")
 }
 
 func (s *SessionConn) closeWithCode(code int, msg string) {
-  _ = s.client.WriteControl(
-      websocket.CloseMessage,
-      websocket.FormatCloseMessage(code, msg),
-      time.Now().Add(time.Second),
-  )
-  s.client.Close()
+  	_ = s.client.WriteControl(
+    	websocket.CloseMessage,
+      	websocket.FormatCloseMessage(code, msg),
+      	time.Now().Add(time.Second),
+  	)
+  	s.client.Close()
 }
 
 func (s *SessionConn) readPump() {
@@ -107,20 +107,19 @@ func (s *SessionConn) readPump() {
 		switch m.MessageType {
 		case Request:
 			data, err := AuthorizeRequest(m.Data) 
-			if err != nil{ 
+			if err != nil { 
 				s.client.SetWriteDeadline(time.Now().Add(write_wait))
 				message, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
 
-				hub.incoming <- HubEvent{
-					Type: BroadcastToConnection,
-					UserID: s.user_id,
-					Session: s,
-					Message: Message{
-          				MessageType: Response, 
-          				RequestID: m.RequestID,
-          				RequestType: ErrorRequest,
-          				Data: message,
-        			},
+				byte_message, _ := utils.ToJSON(Message{
+					MessageType: Response, 
+					RequestID: m.RequestID,
+					RequestType: ErrorRequest,
+					Data: message,
+				})
+
+				if err = s.client.WriteMessage(websocket.TextMessage, byte_message); err != nil {
+					return
 				}
 			}
 
@@ -131,7 +130,6 @@ func (s *SessionConn) readPump() {
 				hub.incoming <- HubEvent{
 					Type:    RegisterConnection,
         			UserID:  s.user_id,
-        			Session: s,
 				}
 			}
 			s.InitAction(&m, data)
