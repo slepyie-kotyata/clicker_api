@@ -30,7 +30,8 @@ func main() {
 	game := e.Group("/game", custommiddleware.LimiterMiddleware())
 	game.Use(custommiddleware.JWTMiddleware(secret.Access_secret))
 	
-	refresh := e.Group("/refresh", custommiddleware.JWTMiddleware(secret.Refresh_secret))
+	refresh := e.Group("/refresh")
+	refresh.Use(custommiddleware.JWTMiddleware(secret.Refresh_secret))
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
