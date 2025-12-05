@@ -3,6 +3,7 @@ package custommiddleware
 import (
 	"clicker_api/service"
 	"clicker_api/utils"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,41 +11,52 @@ import (
 )
 
 func JWTMiddleware(secret string) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if c.Request().Method == http.MethodOptions {
-                return c.NoContent(200)
+    return func(next echo.HandlerFunc) echo.HandlerFunc {
+        return func(c echo.Context) error {
+
+            fmt.Printf("[JWT] %s %s -> middleware\n", c.Request().Method, c.Path())
+
+            // Ловим preflight (OPTIONS)
+            if c.Request().Method == http.MethodOptions {
+                fmt.Println("[JWT] OPTIONS detected → skipping token check & returning 200 for CORS")
+                return c.NoContent(200) // критично! иначе CORS ломается
             }
 
-			header := c.Request().Header.Get("Authorization")
-			if header == "" {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status":  1,
-					"message": "missing token",
-				})
-			}
+            header := c.Request().Header.Get("Authorization")
+            if header == "" {
+                fmt.Println("[JWT] No Authorization header -> 401")
+                return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+                    "status":  1,
+                    "message": "missing token",
+                })
+            }
 
-			header_parts := strings.Split(header, " ")
-			if len(header_parts) != 2 || header_parts[0] != "Bearer" {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status":  1,
-					"message": "invalid token format",
-				})
-			}
+            header_parts := strings.Split(header, " ")
+            if len(header_parts) != 2 || header_parts[0] != "Bearer" {
+                fmt.Printf("[JWT] Invalid Authorization format: %s\n", header)
+                return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+                    "status":  1,
+                    "message": "invalid token format",
+                })
+            }
 
-			token := header_parts[1]
+            token := header_parts[1]
+            fmt.Println("[JWT] Token received, validating...")
 
-			err := service.ValidateToken(token, secret)
-			if err != nil {
-				return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-					"status":  1,
-					"message": err.Error(),
-				})
-			}
+            err := service.ValidateToken(token, secret)
+            if err != nil {
+                fmt.Printf("[JWT] Token invalid: %s\n", err.Error())
+                return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+                    "status":  1,
+                    "message": err.Error(),
+                })
+            }
 
-			c.Set("id", utils.StringToUint(service.ExtractIDFromToken(token, secret)))
+            uid := utils.StringToUint(service.ExtractIDFromToken(token, secret))
+            c.Set("id", uid)
+            fmt.Printf("[JWT] Token valid. user_id=%d -> forwarding\n", uid)
 
-			return next(c)
-		}
-	}
+            return next(c)
+        }
+    }
 }
