@@ -4,12 +4,16 @@ import (
 	"clicker_api/custom_middleware"
 	"clicker_api/routes"
 	"clicker_api/secret"
+	"clicker_api/ws"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	hub := ws.NewHub()
+	go hub.Run()
+
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
     	AllowOrigins: []string{
@@ -32,6 +36,7 @@ func main() {
 	
 	refresh := e.Group("/refresh")
 	refresh.Use(custommiddleware.JWTMiddleware(secret.Refresh_secret))
+	
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
