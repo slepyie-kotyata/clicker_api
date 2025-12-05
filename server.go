@@ -11,9 +11,6 @@ import (
 )
 
 func main() {
-	hub := ws.NewHub()
-	go hub.Run()
-
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
     	AllowOrigins: []string{
