@@ -17,6 +17,8 @@ func InitSession(id uint) *models.Session {
 	DB.Select("email").First(&user, id)
 	
 	if session.ID > 0 {
+		session.UserEmail = user.Email
+		
 		log.Printf("done!")
 		return &session
 	}
