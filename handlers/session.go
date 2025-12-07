@@ -22,7 +22,7 @@ func InitGame(c echo.Context) error {
 	database.DB.Select("email").First(&user, id)
 
 	if session.ID > 0 {
-		filtered_upgrades := service.FilterUpgrades(session, true)
+		filtered_upgrades := service.FilterUpgrades(&session, true)
 		session.UserEmail = user.Email
 
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -71,7 +71,7 @@ func CookClick(c echo.Context) error {
 
 	database.DB.Preload("Level").Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 	
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(&session, true))
 	service.SetDefaults(&upgrade_stats)
 	
 	if upgrade_stats.HasDish == false {
@@ -108,7 +108,7 @@ func SellClick(c echo.Context) error {
 		})
 	}
 	
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(&session, true))
 	service.SetDefaults(&upgrade_stats) 
 
 	min_num := min(upgrade_stats.SpS, float64(session.Dishes))

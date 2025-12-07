@@ -3,7 +3,7 @@ package database
 import (
 	"clicker_api/environment"
 	"clicker_api/models"
-
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -41,4 +41,13 @@ func connectDB() *gorm.DB {
 	db_connection = db
 
 	return db_connection
+}
+
+func ConnectRedis() *redis.Client {
+	opt, err := redis.ParseURL(environment.GetVariable("REDIS_CONNECTION"))
+	if err != nil {
+		panic(err)
+	}
+
+	return redis.NewClient(opt)
 }

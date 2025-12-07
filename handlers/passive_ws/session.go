@@ -50,7 +50,7 @@ func (s *Session) createMessage() {
 }
 
 func (s *Session) UpdateSessionState(seconds uint) {
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.Session, true))
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(&s.Session, true))
 
 	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
 		s.createMessage()

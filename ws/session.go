@@ -1,8 +1,8 @@
 package ws
 
 import (
-	"clicker_api/database"
 	"clicker_api/models"
+	"clicker_api/operations"
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
@@ -18,7 +18,7 @@ import (
 //TODO:разработать хранилище данных сессии
 
 type SessionConn struct {
-	session  		*models.Session
+	session  		*models.SessionState
 	client   		*websocket.Conn
 	user_id    		uint
 	messages 		chan Message
@@ -192,37 +192,10 @@ func (s *SessionConn) writePump() {
 func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
-    	s.session = database.InitSession(s.user_id)
-
-    	data, _ := json.Marshal(map[string]interface{}{"session": SessionResponse{
-			UserID: s.session.UserID,
-			UserEmail: s.session.UserEmail,
-			Money: s.session.Money,
-			Dishes: s.session.Dishes,
-			Level: struct {
-				Rank uint    `json:"rank"`
-				XP   float64 `json:"xp"`
-			}{
-				Rank: s.session.Level.Rank,
-				XP:   s.session.Level.XP,
-			},
-			Prestige: struct {
-				CurrentValue       float64 `json:"current_value"`
-				CurrentBoostValue  float64 `json:"current_boost_value"`
-				AccumulatedValue   float64 `json:"accumulated_value"`
-			}{
-				CurrentValue:      s.session.Prestige.CurrentValue,
-				CurrentBoostValue: s.session.Prestige.CurrentBoostValue,
-				AccumulatedValue:  s.session.Prestige.AccumulatedValue,
-			},
-			Upgrades: struct {
-				Available []service.FilteredUpgrade `json:"available"`
-				Current   []service.FilteredUpgrade `json:"current"`
-			}{
-				Available: service.FilterUpgrades(*s.session, false),
-				Current: service.FilterUpgrades(*s.session, true),
-			},
-		}})
+		session := operations.InitSession(s.user_id)
+		s.session = operations.CreateSessionState(&session)
+		
+    	data, _ := json.Marshal(map[string]interface{}{"session": operations.NewSessionResponse(&session)})
 
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,

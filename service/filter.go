@@ -6,18 +6,6 @@ import (
 	"sort"
 )
 
-type FilteredUpgrade struct {
-	ID          uint               `json:"id" gorm:"primary_key"`
-	Name        string             `json:"name"`
-	IconName    string             `json:"icon_name"`
-	UpgradeType models.UpgradeType `json:"upgrade_type"`
-	PriceFactor float64            `json:"price_factor"`
-	Price       uint               `json:"price"`
-	AccessLevel uint               `json:"access_level"`
-	Boost       models.Boost       `json:"boost"`
-	TimesBought uint               `json:"times_bought"`
-}
-
 type UpgradeStats struct {
 	MpS		float64
 	MpM 	float64
@@ -48,6 +36,41 @@ func SetDefaults(stats *UpgradeStats) {
 	}
 }
 
+func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
+	upgrade_stats := UpgradeStats{}
+
+	for _, upgrade := range filtered_upgrades {
+		switch upgrade.Boost.BoostType {
+		case "mPs":
+			upgrade_stats.MpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dPs":
+			upgrade_stats.DpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "mpM":
+			upgrade_stats.MpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dpM":
+			upgrade_stats.DpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "sPs":
+			upgrade_stats.SpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dPc":
+			upgrade_stats.DpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "mPc":
+			upgrade_stats.MpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "dM":
+			upgrade_stats.Dm += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		case "mM":
+			upgrade_stats.Mm += upgrade.Boost.Value * float64(upgrade.TimesBought)
+		}
+
+		if upgrade.UpgradeType == "dish" {
+			upgrade_stats.HasDish = true
+		}
+	}	
+
+	upgrade_stats.SpS += 1
+
+	return upgrade_stats
+}
+
 var upgrade_priority = map[string]int{
 	"dish":      	1,
 	"equipment": 	2,
@@ -57,12 +80,24 @@ var upgrade_priority = map[string]int{
 }
 
 func getUpgradeTypePriority(upgradeType models.UpgradeType) int {
-	p, _:= upgrade_priority[string(upgradeType)]
+	p := upgrade_priority[string(upgradeType)]
 
 	return p
 }
 
-func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
+type FilteredUpgrade struct {
+	ID          uint               `json:"id" gorm:"primary_key"`
+	Name        string             `json:"name"`
+	IconName    string             `json:"icon_name"`
+	UpgradeType models.UpgradeType `json:"upgrade_type"`
+	PriceFactor float64            `json:"price_factor"`
+	Price       uint               `json:"price"`
+	AccessLevel uint               `json:"access_level"`
+	Boost       models.Boost       `json:"boost"`
+	TimesBought uint               `json:"times_bought"`
+}
+
+func FilterUpgrades(session *models.Session, is_bought bool) []FilteredUpgrade {
 	filtered_upgrades := make([]FilteredUpgrade, 0)
 
 	var session_upgrades []models.SessionUpgrade
@@ -111,39 +146,4 @@ func FilterUpgrades(session models.Session, is_bought bool) []FilteredUpgrade {
 	})
 
 	return filtered_upgrades
-}
-
-func CountBoostValues(filtered_upgrades []FilteredUpgrade) UpgradeStats {
-	upgrade_stats := UpgradeStats{}
-
-	for _, upgrade := range filtered_upgrades {
-		switch upgrade.Boost.BoostType {
-		case "mPs":
-			upgrade_stats.MpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "dPs":
-			upgrade_stats.DpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "mpM":
-			upgrade_stats.MpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "dpM":
-			upgrade_stats.DpM += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "sPs":
-			upgrade_stats.SpS += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "dPc":
-			upgrade_stats.DpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "mPc":
-			upgrade_stats.MpC += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "dM":
-			upgrade_stats.Dm += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		case "mM":
-			upgrade_stats.Mm += upgrade.Boost.Value * float64(upgrade.TimesBought)
-		}
-
-		if upgrade.UpgradeType == "dish" {
-			upgrade_stats.HasDish = true
-		}
-	}	
-
-	upgrade_stats.SpS += 1
-
-	return upgrade_stats
 }
