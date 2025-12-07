@@ -27,12 +27,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var hub = NewHub()
-
-func init() {
-    go hub.Run()
-}
-
 func ServeWs(c echo.Context) error {
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

@@ -21,6 +21,8 @@ type HubEvent struct {
     Message   Message
 }
 
+var H = NewHub()
+
 func NewHub() *Hub {
     return &Hub{
         incoming: make(chan HubEvent, 256),
