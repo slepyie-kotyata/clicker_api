@@ -36,7 +36,7 @@ func BuyUpgrade(c echo.Context) error {
 
 	}
 
-	for _, upgrade := range service.FilterUpgrades(session, false) {
+	for _, upgrade := range service.FilterUpgrades(&session, false) {
 		if upgrade.ID == upgrade_id {
 			this_upgrade = upgrade
 			exist = true
@@ -82,7 +82,7 @@ func GetUpgrades(c echo.Context) error {
 	var session models.Session
 	database.DB.Preload("Upgrades.Boost").Where("user_id = ?", id).First(&session)
 
-	filtered_upgrades := service.FilterUpgrades(session, false)
+	filtered_upgrades := service.FilterUpgrades(&session, false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status":   "0",
