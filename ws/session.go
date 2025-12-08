@@ -1,8 +1,8 @@
 package ws
 
 import (
+	"clicker_api/database"
 	"clicker_api/models"
-	"clicker_api/operations"
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
@@ -45,7 +45,10 @@ const (
 func (s *SessionConn) close() {
   	fmt.Println("exiting session...")
 	if s.user_id != 0 {
-		fmt.Println("unregistered from hub")
+		database.SaveSession(s.session)
+
+		log.Println("unregistered from hub")
+		
 		H.incoming <- HubEvent{
         	Type:    UnregisterConnection,
         	UserID:  s.user_id,
@@ -63,17 +66,17 @@ func (s *SessionConn) close() {
   	fmt.Println("done!")
 }
 
-func (s *SessionConn) closeWithCode(code int, msg string) {
+func (s *SessionConn) writeCloseMessage(code int, msg string) {
   	_ = s.client.WriteControl(
     	websocket.CloseMessage,
       	websocket.FormatCloseMessage(code, msg),
       	time.Now().Add(time.Second),
   	)
-  	s.client.Close()
 }
 
 func (s *SessionConn) readPump() {
 	defer s.close()
+
 	s.client.SetReadLimit(max_message_size)
 	s.client.SetReadDeadline(time.Now().Add(pong_wait))
   	s.client.SetPongHandler(func(string) error{
@@ -105,7 +108,7 @@ func (s *SessionConn) readPump() {
       		return
     	}
 
-		fmt.Println("message has been recieved")
+		log.Println("message has been recieved")
 
 		var m Message
 		if err = json.Unmarshal(message, &m); err != nil {
@@ -120,7 +123,7 @@ func (s *SessionConn) readPump() {
 				s.client.SetWriteDeadline(time.Now().Add(write_wait))
 				message, _ := json.Marshal(map[string]interface{}{"message": err.Error()})
 
-				byte_message, _ := utils.ToJSON(Message{
+				byte_message, _ := json.Marshal(Message{
 					MessageType: Response, 
 					RequestID: m.RequestID,
 					RequestType: ErrorRequest,
@@ -151,6 +154,7 @@ func (s *SessionConn) readPump() {
 func (s *SessionConn) writePump() {
 	ticker := time.NewTicker(ping_period)
 	defer func() {
+		database.SaveSession(s.session)
 		ticker.Stop()
 		s.client.Close()
 	}()
@@ -161,13 +165,13 @@ func (s *SessionConn) writePump() {
       		s.client.SetWriteDeadline(time.Now().Add(write_wait))
 
       		if !ok {
-        	s.closeWithCode(websocket.CloseNormalClosure, "channel closed")
+        	s.writeCloseMessage(websocket.CloseNormalClosure, "channel closed")
         		return
       		}
 
-      		byte_message, err := utils.ToJSON(message)
+      		byte_message, err := json.Marshal(message)
       		if err != nil {
-        		s.closeWithCode(websocket.CloseInternalServerErr, "encode error")
+        		s.writeCloseMessage(websocket.CloseInternalServerErr, "encode error")
         		return
       		}
 
@@ -192,10 +196,10 @@ func (s *SessionConn) writePump() {
 func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
-		session := operations.InitSession(s.user_id)
-		s.session = operations.CreateSessionState(&session)
+		session := database.InitSession(s.user_id)
+		s.session = database.CreateSessionState(&session)
 		
-    	data, _ := json.Marshal(map[string]interface{}{"session": operations.NewSessionResponse(&session)})
+    	data, _ := json.Marshal(map[string]interface{}{"session": NewSessionResponse(&session)})
 
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
