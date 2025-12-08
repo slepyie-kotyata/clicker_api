@@ -37,8 +37,8 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 
 	data, _ := json.Marshal(session)
 
-	fmt.Println(data)
-	
+	fmt.Println(string(data))
+
 	err := RClient.Set(ctx, utils.IntToString(int(s.UserID)), data, 0)
 	if err != nil {
 		panic(err)
