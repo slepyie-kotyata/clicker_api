@@ -15,8 +15,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//TODO:разработать хранилище данных сессии
-
 type SessionConn struct {
 	session  		*models.SessionState
 	client   		*websocket.Conn
@@ -45,15 +43,17 @@ const (
 func (s *SessionConn) close() {
   	fmt.Println("exiting session...")
 	if s.user_id != 0 {
-		database.SaveSession(s.session)
-
 		log.Println("unregistered from hub")
 		
 		H.incoming <- HubEvent{
-        	Type:    UnregisterConnection,
+			Type:    UnregisterConnection,
         	UserID:  s.user_id,
         	Session: s,
     	}
+	}
+	
+	if s.session != nil {
+		database.SaveSession(s.session)
 	}
 
 	select {
@@ -154,7 +154,10 @@ func (s *SessionConn) readPump() {
 func (s *SessionConn) writePump() {
 	ticker := time.NewTicker(ping_period)
 	defer func() {
-		database.SaveSession(s.session)
+		if s.session != nil {
+			database.SaveSession(s.session)
+		}
+
 		ticker.Stop()
 		s.client.Close()
 	}()
