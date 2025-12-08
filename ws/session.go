@@ -8,7 +8,6 @@ import (
 	"clicker_api/utils"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
