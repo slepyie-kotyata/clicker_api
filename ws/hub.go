@@ -1,6 +1,9 @@
 package ws
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type Hub struct {
     incoming chan HubEvent
@@ -43,6 +46,7 @@ func (h *Hub) Run() {
 
         case BroadcastToConnection:
             if sessions, ok := h.sessions[event.UserID]; ok {
+                log.Println("got the message!")
                 for s := range sessions {
                     select {
                     case s.messages <- event.Message:
