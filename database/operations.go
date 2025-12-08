@@ -40,7 +40,7 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 
 	fmt.Println(string(data))
 
-	err := RClient.Set(ctx, utils.IntToString(int(s.UserID)), data, 0)
+	err := RClient.Set(ctx, utils.IntToString(int(s.UserID)), data, 0).Err()
 	if err != nil {
 		panic(err)
 	}
