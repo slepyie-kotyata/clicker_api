@@ -215,6 +215,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case CookRequest:
+		log.Println("cook_request")
 		data, _ := json.Marshal(map[string]interface{}{"message": "he's cookin"})
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
