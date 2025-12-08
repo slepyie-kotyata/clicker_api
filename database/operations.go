@@ -5,6 +5,7 @@ import (
 	"clicker_api/utils"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"gorm.io/gorm"
@@ -32,7 +33,12 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 		session.Upgrades[u.UpgradeID] = u.TimesBought
 	}
 
+	fmt.Printf("RClient: %v, ctx: %v\n", RClient, ctx)
+
 	data, _ := json.Marshal(session)
+
+	fmt.Println(data)
+	
 	err := RClient.Set(ctx, utils.IntToString(int(s.UserID)), data, 0)
 	if err != nil {
 		panic(err)
