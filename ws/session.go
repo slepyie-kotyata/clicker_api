@@ -154,10 +154,6 @@ func (s *SessionConn) readPump() {
 func (s *SessionConn) writePump() {
 	ticker := time.NewTicker(ping_period)
 	defer func() {
-		if s.session != nil {
-			database.SaveSession(s.session)
-		}
-
 		ticker.Stop()
 		s.client.Close()
 	}()
