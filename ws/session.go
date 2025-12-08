@@ -41,7 +41,7 @@ const (
 )
 
 func (s *SessionConn) close() {
-  	fmt.Println("exiting session...")
+  	log.Println("exiting session...")
 	if s.user_id != 0 {
 		log.Println("unregistered from hub")
 		
@@ -52,6 +52,7 @@ func (s *SessionConn) close() {
     	}
 	}
 	
+	log.Println("init session backup")
 	if s.session != nil {
 		database.SaveSession(s.session)
 	}
@@ -63,7 +64,7 @@ func (s *SessionConn) close() {
 		close(s.done)
 		_ = s.client.Close()
 	}
-  	fmt.Println("done!")
+  	log.Println("done!")
 }
 
 func (s *SessionConn) writeCloseMessage(code int, msg string) {
@@ -144,6 +145,8 @@ func (s *SessionConn) readPump() {
 					Session: s,
 				}
 			}
+			log.Println("authorized")
+			log.Println("listening for actions")
 			s.InitAction(&m, data)
 		default:
 			continue
@@ -195,6 +198,7 @@ func (s *SessionConn) writePump() {
 func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
+		log.Println("session_request")
 		session := database.InitSession(s.user_id)
 		s.session = database.CreateSessionState(&session)
 		

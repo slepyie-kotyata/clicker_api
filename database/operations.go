@@ -14,6 +14,7 @@ import (
 var ctx = context.Background()
 
 func CreateSessionState(s *models.Session) *models.SessionState {
+	log.Println("start cashing..")
 	var session_upgrade []models.SessionUpgrade
 
 	session := models.SessionState{
