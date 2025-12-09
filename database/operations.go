@@ -13,6 +13,15 @@ import (
 
 var ctx = context.Background()
 
+var Upgrades = FetchUpdates()
+
+func FetchUpdates() *[]models.Upgrade {
+	var upgrades []models.Upgrade
+	DB.Preload("Boost").Find(&upgrades)
+
+	return &upgrades
+}
+
 func CreateSessionState(s *models.Session) *models.SessionState {
 	log.Println("start cashing..")
 	var session_upgrade []models.SessionUpgrade
@@ -26,7 +35,7 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 		PrestigeCurrent: s.Prestige.CurrentValue,
 		PrestigeBoost: s.Prestige.CurrentBoostValue,
 		PrestigeAccumulated: s.Prestige.AccumulatedValue,
-		Upgrades: make(map[uint]uint, len(s.Upgrades)),
+		Upgrades: make(map[uint]uint, len(*Upgrades)),
 	}
 
 	DB.Where("session_id = ?", s.ID).Find(&session_upgrade)
@@ -48,6 +57,10 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 	log.Println("session cashed")
 
 	return &session
+}
+
+func Cook(s *models.Session) {
+
 }
 
 func SaveSession(s *models.SessionState) {
