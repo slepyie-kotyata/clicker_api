@@ -3,7 +3,7 @@ package passivews
 import (
 	"clicker_api/database"
 	"clicker_api/models"
-	"clicker_api/service"
+	// "clicker_api/service"
 	"fmt"
 	"net"
 	"sync"
@@ -49,49 +49,49 @@ func (s *Session) createMessage() {
 	s.last_mu.Unlock()
 }
 
-func (s *Session) UpdateSessionState(seconds uint) {
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(&s.Session, true))
+// func (s *Session) UpdateSessionState(seconds uint) {
+// 	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(&s.Session, true))
 
-	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
-		s.createMessage()
-		return
-	}
+// 	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
+// 		s.createMessage()
+// 		return
+// 	}
 
-	prestige_boost := s.Session.Prestige.AccumulatedValue
+// 	prestige_boost := s.Session.Prestige.AccumulatedValue
 
-	if prestige_boost == 0 {
-		prestige_boost = 1
-	}
+// 	if prestige_boost == 0 {
+// 		prestige_boost = 1
+// 	}
 
-	var wg sync.WaitGroup
-	wg.Add(3)
+// 	var wg sync.WaitGroup
+// 	wg.Add(3)
 
-	go func() {
-		defer wg.Done()
-		s.PrestigeUpgrade(upgrade_stats, seconds)
+// 	go func() {
+// 		defer wg.Done()
+// 		s.PrestigeUpgrade(upgrade_stats, seconds)
 		
-	}()
+// 	}()
 
-	go func() {
-		defer wg.Done()
-		s.PassiveSellUpdate(upgrade_stats, seconds, prestige_boost)
-	}()
+// 	go func() {
+// 		defer wg.Done()
+// 		s.PassiveSellUpdate(upgrade_stats, seconds, prestige_boost)
+// 	}()
 
-	go func() {
-		defer wg.Done()
-		s.PassiveCookUpdate(upgrade_stats, seconds, prestige_boost)
-	}()
+// 	go func() {
+// 		defer wg.Done()
+// 		s.PassiveCookUpdate(upgrade_stats, seconds, prestige_boost)
+// 	}()
 
-	wg.Wait()
+// 	wg.Wait()
 
-	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").First(&s.Session, s.Session.ID)
+// 	database.DB.Preload("Prestige").Preload("Level").Preload("Upgrades.Boost").First(&s.Session, s.Session.ID)
 
-	if s.Closed {
-		return
-	}
+// 	if s.Closed {
+// 		return
+// 	}
 
-	s.createMessage()
-}
+// 	s.createMessage()
+// }
 
 func (s *Session) StartPassiveLoop() {
 	update_ticker := time.NewTicker(time.Duration(seconds_interval) * time.Second)
@@ -108,7 +108,7 @@ func (s *Session) StartPassiveLoop() {
 		for {
 			select {
 			case <- update_ticker.C:
-				s.UpdateSessionState(seconds_interval)
+				// s.UpdateSessionState(seconds_interval)
 				s.Client.SetReadDeadline(time.Now().Add(time.Duration(seconds_interval) * time.Second + grace_period))
 
 				select {
