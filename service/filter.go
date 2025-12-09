@@ -108,7 +108,7 @@ func FilterUpgrades(session *models.Session, is_bought bool) []FilteredUpgrade {
 		times_bought_map[su.UpgradeID] = su.TimesBought
 	}
 
-	for _, upgrade := range session.Upgrades {
+	for _, upgrade := range *database.Upgrades {
 		times_bought, ok := times_bought_map[upgrade.ID]
 
 		this_upgrade := FilteredUpgrade{
