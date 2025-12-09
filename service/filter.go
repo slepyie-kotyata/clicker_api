@@ -97,19 +97,11 @@ type FilteredUpgrade struct {
 	TimesBought uint               `json:"times_bought"`
 }
 
-func FilterUpgrades(session *models.Session, is_bought bool) []FilteredUpgrade {
+func FilterUpgrades(session *models.SessionState, is_bought bool) []FilteredUpgrade {
 	filtered_upgrades := make([]FilteredUpgrade, 0)
 
-	var session_upgrades []models.SessionUpgrade
-	database.DB.Where("session_id = ?", session.ID).Find(&session_upgrades)
-
-	times_bought_map := make(map[uint]uint)
-	for _, su := range session_upgrades {
-		times_bought_map[su.UpgradeID] = su.TimesBought
-	}
-
 	for _, upgrade := range *database.Upgrades {
-		times_bought, ok := times_bought_map[upgrade.ID]
+		times_bought, ok := session.Upgrades[upgrade.ID]
 
 		this_upgrade := FilteredUpgrade{
 			ID:          upgrade.ID,

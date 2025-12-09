@@ -11,9 +11,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var ctx = context.Background()
+var (
+	ctx = context.Background()
+	Upgrades = FetchUpdates()
+)
 
-var Upgrades = FetchUpdates()
 
 func FetchUpdates() *[]models.Upgrade {
 	var upgrades []models.Upgrade
@@ -59,8 +61,23 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 	return &session
 }
 
-func Cook(s *models.Session) {
+func SaveSessionState(user_id uint, s *models.SessionState) {
+	data, _ := json.Marshal(s)
+	if err := RClient.Set(ctx, utils.IntToString(int(user_id)), data, 0).Err(); err != nil {
+		panic(err)
+	}
+}
 
+func GetSessionState(user_id uint) *models.SessionState {
+	result, err := RClient.Get(ctx, utils.IntToString(int(user_id))).Result()
+	if err != nil {
+		panic(err)
+	}
+
+	var session models.SessionState
+	_ = json.Unmarshal([]byte(result), &session)
+
+	return &session
 }
 
 func SaveSession(s *models.SessionState) {
@@ -106,7 +123,9 @@ func SaveSession(s *models.SessionState) {
 	log.Println("done!")
 }
 
-func InitSession(id uint) models.Session {
+//TODO: обновление списка SessionUpdates
+
+func InitSession(id uint) *models.Session {
 	var (
 		session models.Session
 		user models.User
@@ -121,7 +140,7 @@ func InitSession(id uint) models.Session {
 		session.UserEmail = user.Email
 		
 		log.Printf("done!")
-		return session
+		return &session
 	}
 	
 	new_session := models.Session{
@@ -152,5 +171,5 @@ func InitSession(id uint) models.Session {
 
 	log.Printf("done!")
 	
-	return new_session
+	return &new_session
 }

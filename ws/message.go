@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"clicker_api/models"
 	"clicker_api/secret"
 	"clicker_api/service"
 	"encoding/json"
@@ -75,36 +74,4 @@ type SessionResponse struct {
 		Available	[]service.FilteredUpgrade	`json:"available"`
 		Current 	[]service.FilteredUpgrade	`json:"current"`
 	}   `json:"upgrades"`
-}
-
-func NewSessionResponse(session *models.Session) SessionResponse {
-	return SessionResponse{
-			UserID: session.UserID,
-			UserEmail: session.UserEmail,
-			Money: session.Money,
-			Dishes: session.Dishes,
-			Level: struct {
-				Rank uint    `json:"rank"`
-				XP   float64 `json:"xp"`
-			}{
-				Rank: session.Level.Rank,
-				XP:   session.Level.XP,
-			},
-			Prestige: struct {
-				CurrentValue       float64 `json:"current_value"`
-				CurrentBoostValue  float64 `json:"current_boost_value"`
-				AccumulatedValue   float64 `json:"accumulated_value"`
-			}{
-				CurrentValue:      session.Prestige.CurrentValue,
-				CurrentBoostValue: session.Prestige.CurrentBoostValue,
-				AccumulatedValue:  session.Prestige.AccumulatedValue,
-			},
-			Upgrades: struct {
-				Available []service.FilteredUpgrade `json:"available"`
-				Current   []service.FilteredUpgrade `json:"current"`
-			}{
-				Available: service.FilterUpgrades(session, false),
-				Current: service.FilterUpgrades(session, true),
-			},
-		}
 }

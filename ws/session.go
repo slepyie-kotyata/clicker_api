@@ -199,9 +199,37 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case SessionRequest:
 		log.Println("session_request")
 		session := database.InitSession(s.user_id)
-		s.session = database.CreateSessionState(&session)
+		s.session = database.CreateSessionState(session)
 		
-    	data, _ := json.Marshal(map[string]interface{}{"session": NewSessionResponse(&session)})
+    	data, _ := json.Marshal(map[string]interface{}{"session": SessionResponse{
+			UserID: session.UserID,
+			UserEmail: session.UserEmail,
+			Money: s.session.Money,
+			Dishes: s.session.Dishes,
+			Level: struct {
+				Rank uint    `json:"rank"`
+				XP   float64 `json:"xp"`
+			}{
+				Rank: s.session.LevelRank,
+				XP:   s.session.LevelXP,
+			},
+			Prestige: struct {
+				CurrentValue       float64 `json:"current_value"`
+				CurrentBoostValue  float64 `json:"current_boost_value"`
+				AccumulatedValue   float64 `json:"accumulated_value"`
+			}{
+				CurrentValue:      s.session.PrestigeCurrent,
+				CurrentBoostValue: s.session.PrestigeBoost,
+				AccumulatedValue:  s.session.PrestigeAccumulated,
+			},
+			Upgrades: struct {
+				Available []service.FilteredUpgrade `json:"available"`
+				Current   []service.FilteredUpgrade `json:"current"`
+			}{
+				Available: service.FilterUpgrades(s.session, false),
+				Current: service.FilterUpgrades(s.session, true),
+			},
+		}})
 
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -214,9 +242,14 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 				Data:        data,
 			},
 		}
+	case BuyRequest:
+		
 	case CookRequest:
 		log.Println("cook_request")
-		data, _ := json.Marshal(map[string]interface{}{"message": "he's cookin"})
+
+		response := s.Cook()
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
 			UserID: s.user_id,
