@@ -144,8 +144,8 @@ func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
 	database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&next_level)
 
 	if s.session.LevelXP == float64(next_level.XP) {
-		s.session.LevelRank = 0
-		s.session.LevelXP += 1
+		s.session.LevelRank += 1
+		s.session.LevelXP = 0
 
 		var new_next_level models.LevelXP
 		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
@@ -160,7 +160,7 @@ func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
 
 	if s.session.LevelXP > float64(next_level.XP) {
 		s.session.LevelXP = math.Round((s.session.LevelXP - float64(next_level.XP)) * 100) / 100
-		s.session.LevelXP += 1
+		s.session.LevelRank += 1
 
 		var new_next_level models.LevelXP
 		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
