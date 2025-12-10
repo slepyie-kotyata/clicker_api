@@ -243,7 +243,21 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case BuyRequest:
+		response, r_type := s.Buy(data.Param)
 
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	case CookRequest:
 		log.Println("cook_request")
 		response, r_type := s.Cook()
@@ -262,9 +276,37 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case SellRequest:
+		response, r_type := s.Sell()
 
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	case ListRequest:
+		response, r_type := s.ListUpgrades()
 
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	case LevelUpRequest:
 	
 	case CheckLevelRequest:
