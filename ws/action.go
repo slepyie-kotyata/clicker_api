@@ -120,3 +120,74 @@ func (s *SessionConn) ListUpgrades() (map[string]interface{}, RequestType) {
 		"upgrades": service.FilterUpgrades(s.session, false),
 	}, ListRequest
 }
+
+func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
+	var next_level models.LevelXP
+
+	s.session = database.GetSessionState(s.user_id)
+
+	if s.session.LevelRank == 100 {
+		return map[string]interface{}{
+			"current_rank": s.session.LevelRank,
+			"current_xp": s.session.LevelXP,
+		}, LevelUpRequest
+	}
+
+	database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&next_level)
+
+	if s.session.LevelXP == float64(next_level.XP) {
+		s.session.LevelRank = 0
+		s.session.LevelXP += 1
+
+		var new_next_level models.LevelXP
+		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
+
+		database.SaveSessionState(s.user_id, s.session)
+		return map[string]interface{}{
+			"current_rank": s.session.LevelRank,
+			"current_xp":   s.session.LevelXP,
+			"next_xp":      new_next_level.XP,
+		}, LevelUpRequest
+	}
+
+	if s.session.LevelXP > float64(next_level.XP) {
+		s.session.LevelXP = math.Round((s.session.LevelXP - float64(next_level.XP)) * 100) / 100
+		s.session.LevelXP += 1
+
+		var new_next_level models.LevelXP
+		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
+
+		database.SaveSessionState(s.user_id, s.session)
+		return map[string]interface{}{
+			"current_rank": s.session.LevelRank,
+			"current_xp":   s.session.LevelXP,
+			"next_xp":      new_next_level.XP,
+		}, LevelUpRequest
+	}
+
+	database.SaveSessionState(s.user_id, s.session)
+	return map[string]interface{}{
+		"current_rank": s.session.LevelRank,
+		"current_xp":   s.session.LevelXP,
+	}, LevelUpRequest
+}
+
+func (s *SessionConn) GetLevel() (map[string]interface{}, RequestType) {
+	var level models.LevelXP
+
+	s.session = database.GetSessionState(s.user_id)
+	if s.session.LevelRank == 100 {
+		return map[string]interface{}{
+			"current_rank": s.session.LevelRank,
+			"current_xp":   s.session.LevelXP,
+		}, CheckLevelRequest
+	}
+
+	database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&level)
+
+	return map[string]interface{}{
+		"current_rank": s.session.LevelRank,
+		"current_xp":   s.session.LevelXP,
+		"needed_xp":    level.XP,
+	}, CheckLevelRequest
+}
