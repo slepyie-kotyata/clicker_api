@@ -40,7 +40,6 @@ func main() {
 	routes.InitRefreshRoute(refresh)
 	routes.InitSessionRoutes(game)
 	routes.InitUpgradeRoutes(game)
-	routes.InitLevelRoutes(game)
 	routes.InitPassiveWS(e)
 	routes.InitWsRoutes(e)
 
