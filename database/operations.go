@@ -16,7 +16,6 @@ var (
 	Upgrades = FetchUpdates()
 )
 
-
 func FetchUpdates() *[]models.Upgrade {
 	var upgrades []models.Upgrade
 	DB.Preload("Boost").Find(&upgrades)
