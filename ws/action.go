@@ -15,16 +15,11 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 		level_xp     models.LevelXP
 		this_upgrade service.FilteredUpgrade
 		result_price uint = 0
+		exist bool = false
 		xp_increase  float64
 	)
 
 	upgrade_id := id
-	if upgrade_id == 0 || upgrade_id > uint(len(*database.Upgrades)) {
-		return map[string]interface{}{
-			"message": "upgrade not found",
-		}, ErrorRequest
-	}
-
 	s.session = database.GetSessionState(s.user_id)
 	
 	if s.session.LevelRank == 100 {
@@ -32,6 +27,19 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	} else {
 		database.DB.Where("rank = ?", s.session.LevelRank + 1).Find(&level_xp)
 		xp_increase = percent.Percent(5, int(level_xp.XP))
+	}
+
+	for _, upgrade := range service.FilterUpgrades(s.session, false) {
+		if upgrade.ID == upgrade_id {
+			this_upgrade = upgrade
+			exist = true
+		}
+	}
+
+	if !exist {
+		return map[string]interface{}{
+			"message": "upgrade not found",
+		}, ErrorRequest
 	}
 
 	if this_upgrade.TimesBought == 0 {
