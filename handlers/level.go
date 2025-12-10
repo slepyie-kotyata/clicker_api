@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetLevel(c echo.Context) error {
+func c(c echo.Context) error {
 	id, _ := c.Get("id").(uint)
 
 	var (

@@ -308,8 +308,37 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case LevelUpRequest:
-	
+		response, r_type := s.LevelUp()
+
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	case CheckLevelRequest:
+		response, r_type := s.GetLevel()
+
+		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	default:
 		return
 	}
