@@ -243,11 +243,11 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case BuyRequest:
-		
+
 	case CookRequest:
 		log.Println("cook_request")
+		response, r_type := s.Cook()
 
-		response := s.Cook()
 		data, _ := json.Marshal(map[string]interface{}{"message": response})
 		
 		H.incoming <- HubEvent{
@@ -257,10 +257,17 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			Message: Message{
 				MessageType: Response,
 				RequestID:   m.RequestID,
-				RequestType: m.RequestType,
+				RequestType: r_type,
 				Data:        data,
 			},
 		}
+	case SellRequest:
+
+	case ListRequest:
+
+	case LevelUpRequest:
+	
+	case CheckLevelRequest:
 	default:
 		return
 	}
