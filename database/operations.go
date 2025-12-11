@@ -14,7 +14,20 @@ import (
 var (
 	ctx = context.Background()
 	Upgrades = FetchUpdates()
+	LevelsXP = FetchLevelsXP()
 )
+
+func FetchLevelsXP() map[uint]uint {
+	var levels []models.LevelXP
+	DB.Find(&levels)
+
+	levels_xp := make(map[uint]uint)
+	for _, l := range levels {
+		levels_xp[l.Rank] = l.XP
+	}
+
+	return levels_xp
+}
 
 func FetchUpdates() *[]models.Upgrade {
 	var upgrades []models.Upgrade
