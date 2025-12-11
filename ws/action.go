@@ -2,7 +2,6 @@ package ws
 
 import (
 	"clicker_api/database"
-	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
 	"log"
@@ -11,9 +10,10 @@ import (
 	"github.com/dariubs/percent"
 )
 
+//хранение LevelXP в глобальной переменной
+
 func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	var (
-		level_xp     models.LevelXP
 		this_upgrade service.FilteredUpgrade
 		result_price uint = 0
 		xp_increase  float64
@@ -41,8 +41,7 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	if s.session.LevelRank == 100 {
 		xp_increase = 0
 	} else {
-		database.DB.Where("rank = ?", s.session.LevelRank + 1).Find(&level_xp)
-		xp_increase = percent.Percent(5, int(level_xp.XP))
+		xp_increase = percent.Percent(5, int(database.LevelsXP[s.session.LevelRank + 1]))
 	}
 
 
@@ -134,9 +133,8 @@ func (s *SessionConn) ListUpgrades() (map[string]interface{}, RequestType) {
 }
 
 func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
-	var next_level models.LevelXP
-
 	s.session = database.GetSessionState(s.user_id)
+	next_level := database.LevelsXP[s.session.LevelRank + 1]
 
 	if s.session.LevelRank == 100 {
 		return map[string]interface{}{
@@ -145,35 +143,27 @@ func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
 		}, LevelUpRequest
 	}
 
-	database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&next_level)
-
-	if s.session.LevelXP == float64(next_level.XP) {
+	if s.session.LevelXP == float64(next_level) {
 		s.session.LevelRank += 1
 		s.session.LevelXP = 0
 
-		var new_next_level models.LevelXP
-		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
-
 		database.SaveSessionState(s.user_id, s.session)
 		return map[string]interface{}{
 			"current_rank": s.session.LevelRank,
 			"current_xp":   s.session.LevelXP,
-			"next_xp":      new_next_level.XP,
+			"next_xp":      database.LevelsXP[s.session.LevelRank + 1],
 		}, LevelUpRequest
 	}
 
-	if s.session.LevelXP > float64(next_level.XP) {
-		s.session.LevelXP = math.Round((s.session.LevelXP - float64(next_level.XP)) * 100) / 100
+	if s.session.LevelXP > float64(next_level) {
+		s.session.LevelXP = math.Round((s.session.LevelXP - float64(next_level)) * 100) / 100
 		s.session.LevelRank += 1
-
-		var new_next_level models.LevelXP
-		database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&new_next_level)
 
 		database.SaveSessionState(s.user_id, s.session)
 		return map[string]interface{}{
 			"current_rank": s.session.LevelRank,
 			"current_xp":   s.session.LevelXP,
-			"next_xp":      new_next_level.XP,
+			"next_xp":      database.LevelsXP[s.session.LevelRank + 1],
 		}, LevelUpRequest
 	}
 
@@ -185,8 +175,6 @@ func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
 }
 
 func (s *SessionConn) GetLevel() (map[string]interface{}, RequestType) {
-	var level models.LevelXP
-
 	s.session = database.GetSessionState(s.user_id)
 	if s.session.LevelRank == 100 {
 		return map[string]interface{}{
@@ -195,11 +183,9 @@ func (s *SessionConn) GetLevel() (map[string]interface{}, RequestType) {
 		}, CheckLevelRequest
 	}
 
-	database.DB.Where("rank = ?", s.session.LevelRank + 1).First(&level)
-
 	return map[string]interface{}{
 		"current_rank": s.session.LevelRank,
 		"current_xp":   s.session.LevelXP,
-		"needed_xp":    level.XP,
+		"needed_xp":    database.LevelsXP[s.session.LevelRank + 1],
 	}, CheckLevelRequest
 }
