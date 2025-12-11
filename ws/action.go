@@ -109,9 +109,20 @@ func (s *SessionConn) Sell() (map[string]interface{}, RequestType) {
 		prestige_boost = 1
 	}
 
+	log.Printf("SpS: %v", upgrade_stats.SpS)
+	log.Printf("min_num: %v", min_num)
+	log.Printf("prestige_boost: %v", prestige_boost)
+	log.Printf("MpC: %v", upgrade_stats.MpC)
+	log.Printf("Mm: %v", upgrade_stats.Mm)
+	
 	s.session.Money += uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost))
+	log.Println("added value to money: ", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost)))
+
 	s.session.Dishes -= uint(min_num)
 	s.session.LevelXP = math.Round((s.session.LevelXP + 10) * 100) / 100
+	
+	log.Println("dishes: ", s.session.Dishes)
+	log.Println("money: ", s.session.Money)
 
 	database.SaveSessionState(s.user_id, s.session)
 
