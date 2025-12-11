@@ -35,7 +35,7 @@ func NewHub() *Hub {
 }
 
 func (h *Hub) GetActiveUsers() []uint {
-    users := make([]uint, len(h.sessions))
+    users := make([]uint, 0, len(h.sessions))
     for id := range h.sessions {
         users = append(users, id)
     }

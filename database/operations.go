@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -84,6 +85,10 @@ func SaveSessionState(user_id uint, s *models.SessionState) {
 
 func GetSessionState(user_id uint) *models.SessionState {
 	result, err := RClient.Get(ctx, utils.IntToString(int(user_id))).Result()
+	if err == redis.Nil {
+        return nil
+    }
+	
 	if err != nil {
 		panic(err)
 	}

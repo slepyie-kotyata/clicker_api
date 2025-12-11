@@ -37,7 +37,9 @@ func (p *PassiveWorker) Start() {
     			}
 				
     			for _, id := range users {
-        			p.updateSessionState(id)
+        			if session := database.GetSessionState(id); session != nil {
+        				p.updateSessionState(session, id)
+    				}
     			}
             case <-p.done:
                 return
@@ -51,12 +53,7 @@ func (p *PassiveWorker) Stop() {
     close(p.done)
 }
 
-func (p *PassiveWorker) updateSessionState(id uint) {
-    session := database.GetSessionState(id)
-    if session == nil {
-        return
-    }
-
+func (p *PassiveWorker) updateSessionState(session *models.SessionState, id uint) {
     upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 
 	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
