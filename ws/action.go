@@ -126,7 +126,8 @@ func (s *SessionConn) ListUpgrades() (map[string]interface{}, RequestType) {
 	s.session = database.GetSessionState(s.user_id)
 
 	return map[string]interface{}{
-		"upgrades": service.FilterUpgrades(s.session, false),
+		"available": service.FilterUpgrades(s.session, false),
+		"current": service.FilterUpgrades(s.session, true),
 	}, ListRequest
 }
 
