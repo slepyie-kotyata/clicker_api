@@ -94,6 +94,13 @@ func GetSessionState(user_id uint) *models.SessionState {
 	return &session
 }
 
+func DeleteSessionState(user_id uint) {
+	err := RClient.Del(ctx, utils.IntToString(int(user_id))).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func SaveSession(s *models.SessionState) {
 	log.Println("saving session...")
 
