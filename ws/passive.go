@@ -5,6 +5,7 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"encoding/json"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -26,15 +27,16 @@ func NewPassiveWorker() *PassiveWorker {
 }
 
 func (p *PassiveWorker) Start() {
+	log.Println("passive started")
     go func() {
         for {
             select {
             case <-p.ticker.C:
 				users := H.GetActiveUsers()
     			if len(users) == 0 {
-        			return
+					return
     			}
-
+				
     			for _, id := range users {
         			p.updateSessionState(id)
     			}
@@ -59,29 +61,37 @@ func (p *PassiveWorker) updateSessionState(id uint) {
     upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 
 	if upgrade_stats.MpS == 0 && upgrade_stats.DpS == 0 {
+		log.Println("no passive updates")
 		return
 	}
+
+	log.Println("init passive")
 
 	var wg sync.WaitGroup
 	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
+		log.Println("passive prestige")
 		prestigeUpgrade(session, upgrade_stats, seconds)
 		
 	}()
 
 	go func() {
 		defer wg.Done()
+		log.Println("passive sell")
 		passiveSellUpdate(session, upgrade_stats, seconds)
 	}()
 
 	go func() {
 		defer wg.Done()
+		log.Println("passive cook")
 		passiveCookUpdate(session, upgrade_stats, seconds)
 	}()
 
 	wg.Wait()
+
+	log.Println("done")
 
 	database.SaveSessionState(id, session)
 
