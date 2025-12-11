@@ -32,6 +32,7 @@ func main() {
 	refresh.Use(custommiddleware.JWTMiddleware(secret.Refresh_secret))
 	
 	go ws.H.Run()
+	go ws.P.Start()
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)

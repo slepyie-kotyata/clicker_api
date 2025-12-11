@@ -34,6 +34,14 @@ func NewHub() *Hub {
     }
 }
 
+func (h *Hub) GetActiveUsers() []uint {
+    users := make([]uint, len(h.sessions))
+    for id := range h.sessions {
+        users = append(users, id)
+    }
+    return users
+}
+
 func (h *Hub) Run() {
     for event := range h.incoming {
         switch event.Type {
