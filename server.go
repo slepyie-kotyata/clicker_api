@@ -39,6 +39,5 @@ func main() {
 	routes.InitWsRoutes(e)
 
 	e.Start(":1323")
-
 }
 
