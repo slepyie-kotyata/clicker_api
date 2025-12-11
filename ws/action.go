@@ -104,7 +104,7 @@ func (s *SessionConn) Sell() (map[string]interface{}, RequestType) {
 
 	min_num := min(upgrade_stats.SpS, float64(s.session.Dishes))
 	
-	prestige_boost := s.session.PrestigeAccumulated
+	prestige_boost := s.session.PrestigeBoost
 	if prestige_boost == 0 {
 		prestige_boost = 1
 	}
