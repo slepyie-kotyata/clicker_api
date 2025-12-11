@@ -28,9 +28,6 @@ func main() {
     	AllowCredentials: true,
 	}))
 	
-	game := e.Group("/game", custommiddleware.LimiterMiddleware())
-	game.Use(custommiddleware.JWTMiddleware(secret.Access_secret))
-	
 	refresh := e.Group("/refresh")
 	refresh.Use(custommiddleware.JWTMiddleware(secret.Refresh_secret))
 	
@@ -38,9 +35,6 @@ func main() {
 
 	routes.InitEntryRoutes(e)
 	routes.InitRefreshRoute(refresh)
-	routes.InitSessionRoutes(game)
-	routes.InitUpgradeRoutes(game)
-	routes.InitPassiveWS(e)
 	routes.InitWsRoutes(e)
 
 	e.Start(":1323")
