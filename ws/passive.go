@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"log"
 	"math"
-	"sync"
 	"time"
 )
 
@@ -34,7 +33,7 @@ func (p *PassiveWorker) Start() {
             case <-p.ticker.C:
 				users := H.GetActiveUsers()
     			if len(users) == 0 {
-					return
+					continue
     			}
 				
     			for _, id := range users {
@@ -54,7 +53,7 @@ func (p *PassiveWorker) Stop() {
 
 func (p *PassiveWorker) updateSessionState(id uint) {
     session := database.GetSessionState(id)
-    if session != nil {
+    if session == nil {
         return
     }
 
@@ -67,29 +66,9 @@ func (p *PassiveWorker) updateSessionState(id uint) {
 
 	log.Println("init passive")
 
-	var wg sync.WaitGroup
-	wg.Add(3)
-
-	go func() {
-		defer wg.Done()
-		log.Println("passive prestige")
-		prestigeUpgrade(session, upgrade_stats, seconds)
-		
-	}()
-
-	go func() {
-		defer wg.Done()
-		log.Println("passive sell")
-		passiveSellUpdate(session, upgrade_stats, seconds)
-	}()
-
-	go func() {
-		defer wg.Done()
-		log.Println("passive cook")
-		passiveCookUpdate(session, upgrade_stats, seconds)
-	}()
-
-	wg.Wait()
+	prestigeUpgrade(session, upgrade_stats, seconds)
+	passiveSellUpdate(session, upgrade_stats, seconds)
+	passiveCookUpdate(session, upgrade_stats, seconds)
 
 	log.Println("done")
 
