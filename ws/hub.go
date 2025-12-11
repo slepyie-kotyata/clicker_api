@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"clicker_api/database"
 	"fmt"
 	"log"
 )
@@ -62,6 +63,7 @@ func (h *Hub) Run() {
                 delete(sessions, event.Session)
                 if len(sessions) == 0 {
                     delete(h.sessions, event.UserID)
+                    database.DeleteSessionState(event.UserID)
                 }
             }
             fmt.Println(len(h.sessions[event.UserID]))
