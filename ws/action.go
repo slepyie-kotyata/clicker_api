@@ -17,13 +17,22 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 		this_upgrade service.FilteredUpgrade
 		result_price uint = 0
 		xp_increase  float64
+		exist bool = false
 	)
 
 	upgrade_id := id
 	s.session = database.GetSessionState(s.user_id)
 
 	log.Println(upgrade_id)
-	if upgrade_id == 0 || upgrade_id > uint(len(*database.Upgrades)) {
+	for _, upgrade := range service.FilterUpgrades(s.session, false) {
+		if upgrade.ID == upgrade_id {
+			log.Println()
+			this_upgrade = upgrade
+			exist = true
+		}
+	}
+
+	if !exist {
 		return map[string]interface{}{
 			"message": "upgrade not found",
 		}, ErrorRequest
