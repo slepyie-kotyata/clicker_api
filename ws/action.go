@@ -10,8 +10,6 @@ import (
 	"github.com/dariubs/percent"
 )
 
-//хранение LevelXP в глобальной переменной
-
 func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	var (
 		this_upgrade service.FilteredUpgrade

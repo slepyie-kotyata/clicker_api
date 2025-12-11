@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//TODO: удаление записи после выхода клиента
+
 var (
 	ctx = context.Background()
 	Upgrades = FetchUpdates()

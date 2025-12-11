@@ -246,7 +246,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 		log.Println("buy_request")
 		response, r_type := s.Buy(data.Param)
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -263,7 +263,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 		log.Println("cook_request")
 		response, r_type := s.Cook()
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -279,7 +279,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case SellRequest:
 		response, r_type := s.Sell()
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -295,7 +295,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case ListRequest:
 		response, r_type := s.ListUpgrades()
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -311,7 +311,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case LevelUpRequest:
 		response, r_type := s.LevelUp()
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
@@ -327,7 +327,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	case CheckLevelRequest:
 		response, r_type := s.GetLevel()
 
-		data, _ := json.Marshal(map[string]interface{}{"message": response})
+		data, _ := json.Marshal(response)
 		
 		H.incoming <- HubEvent{
 			Type: BroadcastToConnection,
