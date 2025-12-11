@@ -187,3 +187,28 @@ func (s *SessionConn) GetLevel() (map[string]interface{}, RequestType) {
 		"needed_xp":    database.LevelsXP[s.session.LevelRank + 1],
 	}, CheckLevelRequest
 }
+
+func (s *SessionConn) ResetSession() (map[string]interface{}, RequestType) {
+	s.session = database.GetSessionState(s.user_id)
+	if s.session.PrestigeCurrent < 1 {
+		return map[string]interface{}{
+			"message": "not enough prestige points",
+		}, ErrorRequest
+	}
+
+	p_boost := math.Round((1 + 0.05 * s.session.PrestigeCurrent) * 10 ) / 10
+	p_value := s.session.PrestigeCurrent
+
+	for i := range s.session.Upgrades {
+		s.session.Upgrades[i] = 0
+	}
+
+	s.session.Money, s.session.Dishes, s.session.LevelRank, s.session.LevelXP, s.session.PrestigeCurrent = 0, 0, 0, 0, 0
+	s.session.PrestigeBoost += p_boost
+	s.session.PrestigeAccumulated += p_value
+
+	database.SaveSessionState(s.user_id, s.session)
+	return map[string]interface{}{
+		"message": "success",
+	}, ResetRequest
+}
