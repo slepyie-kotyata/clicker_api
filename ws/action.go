@@ -5,6 +5,7 @@ import (
 	"clicker_api/models"
 	"clicker_api/service"
 	"clicker_api/utils"
+	"log"
 	"math"
 
 	"github.com/dariubs/percent"
@@ -21,6 +22,8 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 
 	upgrade_id := id
 	s.session = database.GetSessionState(s.user_id)
+
+	log.Println(upgrade_id)
 	
 	if s.session.LevelRank == 100 {
 		xp_increase = 0
@@ -31,6 +34,7 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 
 	for _, upgrade := range service.FilterUpgrades(s.session, false) {
 		if upgrade.ID == upgrade_id {
+			log.Println()
 			this_upgrade = upgrade
 			exist = true
 		}

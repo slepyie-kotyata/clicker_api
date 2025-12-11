@@ -243,6 +243,7 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case BuyRequest:
+		log.Println("buy_request")
 		response, r_type := s.Buy(data.Param)
 
 		data, _ := json.Marshal(map[string]interface{}{"message": response})
