@@ -5,6 +5,7 @@ import (
 	"clicker_api/service"
 	"encoding/json"
 	"errors"
+	"log"
 )
 
 type MessageType string
@@ -41,6 +42,8 @@ type RequestData struct {
 
 func AuthorizeRequest(request_data json.RawMessage) (*RequestData, error) {
 	var data RequestData
+	log.Println(">> RAW data:", string(request_data))
+	
 	if err := json.Unmarshal(request_data, &data); err != nil {
 		return nil, errors.New("invalid data")
 	}
