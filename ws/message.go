@@ -37,7 +37,7 @@ type Message struct {
 
 type RequestData struct {
 	Token  		string 		`json:"token"`
-	Param 		uint		`json:"param,omitempty"`
+	Param 		uint		`json:"id,omitempty"`
 }
 
 func AuthorizeRequest(request_data json.RawMessage) (*RequestData, error) {
