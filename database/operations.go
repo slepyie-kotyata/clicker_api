@@ -113,20 +113,20 @@ func SaveSession(s *models.SessionState) {
 			return err
 		}
 		
-		tx.Model(&session).Updates(models.Session{
-			Money:  s.Money,
-			Dishes: s.Dishes,
+		tx.Model(&session).Updates(map[string]interface{}{
+    		"money":  s.Money,
+    		"dishes": s.Dishes,
 		})
-		
-		tx.Model(session.Level).Updates(models.Level{
-			Rank: s.LevelRank,
-			XP:   s.LevelXP,
+
+		tx.Model(session.Level).Updates(map[string]interface{}{
+    		"rank": s.LevelRank,
+    		"xp":   s.LevelXP,
 		})
-		
-		tx.Model(session.Prestige).Updates(models.Prestige{
-			CurrentValue: s.PrestigeCurrent,
-			CurrentBoostValue: s.PrestigeBoost,
-			AccumulatedValue: s.PrestigeAccumulated,
+
+		tx.Model(session.Prestige).Updates(map[string]interface{}{
+    		"current_value":         s.PrestigeCurrent,
+    		"current_boost_value":   s.PrestigeBoost,
+    		"accumulated_value":     s.PrestigeAccumulated,
 		})
 		
 		return nil
