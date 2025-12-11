@@ -340,6 +340,22 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 				Data:        data,
 			},
 		}
+	case ResetRequest:
+		response, r_type := s.ResetSession()
+
+		data, _ := json.Marshal(response)
+
+		H.incoming <- HubEvent{
+			Type: BroadcastToConnection,
+			UserID: s.user_id,
+			Session: s,
+			Message: Message{
+				MessageType: Response,
+				RequestID:   m.RequestID,
+				RequestType: r_type,
+				Data:        data,
+			},
+		}
 	default:
 		return
 	}
