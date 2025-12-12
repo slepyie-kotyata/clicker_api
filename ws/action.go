@@ -36,12 +36,6 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 		}, ErrorRequest
 	}
 	
-	if session.LevelRank == 100 {
-		xp_increase = 0
-	} else {
-		xp_increase = percent.Percent(1, int(database.LevelsXP[session.LevelRank + 1]))
-	}
-
 	if this_upgrade.TimesBought == 0 {
 		result_price = this_upgrade.Price
 	} else {
@@ -55,7 +49,13 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	}
 
 	session.Money -= result_price
-	session.LevelXP = math.Round(((session.LevelXP + xp_increase) * (session.PrestigeCurrent + 1)) * 100) / 100
+
+	if session.LevelRank == 100 {
+		xp_increase = 0
+	} else {
+		xp_increase = percent.Percent(1, int(database.LevelsXP[session.LevelRank + 1]))
+		session.LevelXP = math.Round((session.LevelXP + xp_increase + (session.PrestigeCurrent * 0.05)) * 100) / 100
+	}
 	
 	session.Upgrades[upgrade_id] += 1
 
@@ -81,7 +81,10 @@ func (s *SessionConn) Cook() (map[string]interface{}, RequestType) {
 	}
 
 	session.Dishes += uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))
-	session.LevelXP = math.Round((session.LevelXP + 1 + session.PrestigeCurrent) * 100) / 100
+
+	if session.LevelXP != 100 {
+		session.LevelXP = math.Round((session.LevelXP + 1 + (session.PrestigeCurrent * 0.05)) * 100) / 100
+	}
 
 	database.SaveSessionState(s.user_id, session)
 	database.A.MarkChanged(s.user_id)
@@ -121,7 +124,10 @@ func (s *SessionConn) Sell() (map[string]interface{}, RequestType) {
 	log.Println("added value to money: ", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost)))
 
 	session.Dishes -= uint(min_num)
-	session.LevelXP = math.Round((session.LevelXP + 10 + session.PrestigeCurrent) * 100) / 100
+
+	if session.LevelXP != 100 {
+		session.LevelXP = math.Round(session.LevelXP + 1 + (session.PrestigeCurrent * 0.05) * 100) / 100
+	}
 	
 	log.Println("dishes: ", session.Dishes)
 	log.Println("money: ", session.Money)
