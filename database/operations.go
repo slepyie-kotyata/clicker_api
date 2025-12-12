@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -99,8 +100,8 @@ func GetSessionState(user_id uint) *models.SessionState {
 	return &session
 }
 
-func DeleteSessionState(user_id uint) {
-	err := RClient.Del(ctx, utils.IntToString(int(user_id))).Err()
+func SetTTL(user_id uint) {
+	_, err := RClient.Expire(ctx, utils.IntToString(int(user_id)), 10 * time.Second).Result()
 	if err != nil {
 		panic(err)
 	}
