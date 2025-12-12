@@ -82,7 +82,7 @@ func (s *SessionConn) Cook() (map[string]interface{}, RequestType) {
 
 	session.Dishes += uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))
 
-	if session.LevelXP != 100 {
+	if session.LevelRank != 100 {
 		session.LevelXP = math.Round((session.LevelXP + 1 + (session.PrestigeCurrent * 0.05)) * 100) / 100
 	}
 
