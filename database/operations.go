@@ -101,7 +101,7 @@ func GetSessionState(user_id uint) *models.SessionState {
 }
 
 func SetTTL(user_id uint) {
-	_, err := RClient.Expire(ctx, utils.IntToString(int(user_id)), 10 * time.Second).Result()
+	_, err := RClient.Expire(ctx, utils.IntToString(int(user_id)), 20 * time.Minute).Result()
 	if err != nil {
 		panic(err)
 	}
