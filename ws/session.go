@@ -2,7 +2,6 @@ package ws
 
 import (
 	"clicker_api/database"
-	"clicker_api/models"
 	"clicker_api/secret"
 	"clicker_api/service"
 	"clicker_api/utils"
@@ -15,7 +14,6 @@ import (
 )
 
 type SessionConn struct {
-	session  		*models.SessionState
 	client   		*websocket.Conn
 	user_id    		uint
 	messages 		chan Message
@@ -24,7 +22,6 @@ type SessionConn struct {
 
 func NewSession(conn *websocket.Conn) *SessionConn {
 	return &SessionConn{
-		session: 		nil,
 		client: 		conn,
 		user_id: 		0,
 		messages: 		make(chan Message, 10),
@@ -49,11 +46,6 @@ func (s *SessionConn) close() {
         	UserID:  s.user_id,
         	Session: s,
     	}
-	}
-	
-	log.Println("init session backup")
-	if s.session != nil {
-		database.SaveSession(s.session)
 	}
 
 	select {
@@ -198,36 +190,36 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
 		log.Println("session_request")
-		session := database.InitSession(s.user_id)
-		s.session = database.CreateSessionState(session)
+		s_bd := database.InitSession(s.user_id)
+		session := database.CreateSessionState(s_bd)
 		
     	data, _ := json.Marshal(map[string]interface{}{"session": SessionResponse{
-			UserID: session.UserID,
-			UserEmail: session.UserEmail,
-			Money: s.session.Money,
-			Dishes: s.session.Dishes,
+			UserID: s_bd.UserID,
+			UserEmail: s_bd.UserEmail,
+			Money: s_bd.Money,
+			Dishes: s_bd.Dishes,
 			Level: struct {
 				Rank uint    `json:"rank"`
 				XP   float64 `json:"xp"`
 			}{
-				Rank: s.session.LevelRank,
-				XP:   s.session.LevelXP,
+				Rank: s_bd.Level.Rank,
+				XP:   s_bd.Level.XP,
 			},
 			Prestige: struct {
 				CurrentValue       float64 `json:"current_value"`
 				CurrentBoostValue  float64 `json:"current_boost_value"`
 				AccumulatedValue   float64 `json:"accumulated_value"`
 			}{
-				CurrentValue:      s.session.PrestigeCurrent,
-				CurrentBoostValue: s.session.PrestigeBoost,
-				AccumulatedValue:  s.session.PrestigeAccumulated,
+				CurrentValue:      s_bd.Prestige.CurrentValue,
+				CurrentBoostValue: s_bd.Prestige.CurrentBoostValue,
+				AccumulatedValue:  s_bd.Prestige.AccumulatedValue,
 			},
 			Upgrades: struct {
 				Available []service.FilteredUpgrade `json:"available"`
 				Current   []service.FilteredUpgrade `json:"current"`
 			}{
-				Available: service.FilterUpgrades(s.session, false),
-				Current: service.FilterUpgrades(s.session, true),
+				Available: service.FilterUpgrades(session, false),
+				Current: service.FilterUpgrades(session, true),
 			},
 		}})
 
