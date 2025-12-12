@@ -19,10 +19,10 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	)
 
 	upgrade_id := id
-	s.session = database.GetSessionState(s.user_id)
+	session := database.GetSessionState(s.user_id)
 
 	log.Println(upgrade_id)
-	for _, upgrade := range service.FilterUpgrades(s.session, false) {
+	for _, upgrade := range service.FilterUpgrades(session, false) {
 		if upgrade.ID == upgrade_id {
 			log.Println()
 			this_upgrade = upgrade
@@ -36,10 +36,10 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 		}, ErrorRequest
 	}
 	
-	if s.session.LevelRank == 100 {
+	if session.LevelRank == 100 {
 		xp_increase = 0
 	} else {
-		xp_increase = percent.Percent(1, int(database.LevelsXP[s.session.LevelRank + 1]))
+		xp_increase = percent.Percent(1, int(database.LevelsXP[session.LevelRank + 1]))
 	}
 
 	if this_upgrade.TimesBought == 0 {
@@ -48,29 +48,30 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 		result_price = uint(math.Round(float64(this_upgrade.Price) * math.Pow(this_upgrade.PriceFactor, float64(this_upgrade.TimesBought))))
 	}
 
-	if s.session.Money < result_price {
+	if session.Money < result_price {
 		return map[string]interface{}{
-			"message": "not enough money, you have: " + utils.IntToString(int(s.session.Money)) + ", you need: " + utils.IntToString(int(result_price)),
+			"message": "not enough money, you have: " + utils.IntToString(int(session.Money)) + ", you need: " + utils.IntToString(int(result_price)),
 		}, ErrorRequest
 	}
 
-	s.session.Money -= result_price
-	s.session.LevelXP = math.Round(((s.session.LevelXP + xp_increase) * (s.session.PrestigeCurrent + 1)) * 100) / 100
+	session.Money -= result_price
+	session.LevelXP = math.Round(((session.LevelXP + xp_increase) * (session.PrestigeCurrent + 1)) * 100) / 100
 	
-	s.session.Upgrades[upgrade_id] += 1
+	session.Upgrades[upgrade_id] += 1
 
-	database.SaveSessionState(s.user_id, s.session)
+	database.SaveSessionState(s.user_id, session)
+	database.A.MarkChanged(s.user_id)
 
 	return map[string]interface{}{
-		"money": s.session.Money,
-		"xp": s.session.LevelXP,
+		"money": session.Money,
+		"xp": session.LevelXP,
 	}, BuyRequest
 }
 
 func (s *SessionConn) Cook() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
+	session := database.GetSessionState(s.user_id)
 
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.session, true))
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 	service.SetDefaults(&upgrade_stats)
 	
 	if !upgrade_stats.HasDish {
@@ -79,32 +80,33 @@ func (s *SessionConn) Cook() (map[string]interface{}, RequestType) {
 		}, ErrorRequest
 	}
 
-	s.session.Dishes += uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))
-	s.session.LevelXP = math.Round((s.session.LevelXP + 1 + s.session.PrestigeCurrent) * 100) / 100
+	session.Dishes += uint(math.Ceil((1 + upgrade_stats.DpC) * upgrade_stats.Dm))
+	session.LevelXP = math.Round((session.LevelXP + 1 + session.PrestigeCurrent) * 100) / 100
 
-	database.SaveSessionState(s.user_id, s.session)
+	database.SaveSessionState(s.user_id, session)
+	database.A.MarkChanged(s.user_id)
 
 	return map[string]interface{}{
-		"dishes": s.session.Dishes,
-		"xp": s.session.LevelXP,
+		"dishes": session.Dishes,
+		"xp": session.LevelXP,
 	}, CookRequest
 }
 
 func (s *SessionConn) Sell() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
+	session := database.GetSessionState(s.user_id)
 
-	if s.session.Dishes <= 0 {
+	if session.Dishes <= 0 {
 		return map[string]interface{}{
 			"message": "not enough dishes",
 		}, ErrorRequest
 	}
 
-	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(s.session, true))
+	upgrade_stats := service.CountBoostValues(service.FilterUpgrades(session, true))
 	service.SetDefaults(&upgrade_stats) 
 
-	min_num := min(upgrade_stats.SpS, float64(s.session.Dishes))
+	min_num := min(upgrade_stats.SpS, float64(session.Dishes))
 	
-	prestige_boost := s.session.PrestigeBoost
+	prestige_boost := session.PrestigeBoost
 	if prestige_boost == 0 {
 		prestige_boost = 1
 	}
@@ -115,109 +117,118 @@ func (s *SessionConn) Sell() (map[string]interface{}, RequestType) {
 	log.Printf("MpC: %v", upgrade_stats.MpC)
 	log.Printf("Mm: %v", upgrade_stats.Mm)
 	
-	s.session.Money += uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost))
+	session.Money += uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost))
 	log.Println("added value to money: ", uint(math.Ceil(upgrade_stats.MpC * upgrade_stats.Mm * min_num * prestige_boost)))
 
-	s.session.Dishes -= uint(min_num)
-	s.session.LevelXP = math.Round((s.session.LevelXP + 10 + s.session.PrestigeCurrent) * 100) / 100
+	session.Dishes -= uint(min_num)
+	session.LevelXP = math.Round((session.LevelXP + 10 + session.PrestigeCurrent) * 100) / 100
 	
-	log.Println("dishes: ", s.session.Dishes)
-	log.Println("money: ", s.session.Money)
+	log.Println("dishes: ", session.Dishes)
+	log.Println("money: ", session.Money)
 
-	database.SaveSessionState(s.user_id, s.session)
+	database.SaveSessionState(s.user_id, session)
+	database.A.MarkChanged(s.user_id)
 
 	return map[string]interface{}{
-		"dishes": s.session.Dishes,
-		"money": s.session.Money,
-		"xp": s.session.LevelXP,
+		"dishes": session.Dishes,
+		"money": session.Money,
+		"xp": session.LevelXP,
 	}, SellRequest
 }
 
 func (s *SessionConn) ListUpgrades() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
+	session := database.GetSessionState(s.user_id)
 
 	return map[string]interface{}{
-		"available": service.FilterUpgrades(s.session, false),
-		"current": service.FilterUpgrades(s.session, true),
+		"available": service.FilterUpgrades(session, false),
+		"current": service.FilterUpgrades(session, true),
 	}, ListRequest
 }
 
 func (s *SessionConn) LevelUp() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
-	next_level := database.LevelsXP[s.session.LevelRank + 1]
+	session := database.GetSessionState(s.user_id)
+	next_level := database.LevelsXP[session.LevelRank + 1]
 
-	if s.session.LevelRank == 100 {
+	if session.LevelRank == 100 {
 		return map[string]interface{}{
-			"current_rank": s.session.LevelRank,
-			"current_xp": s.session.LevelXP,
+			"current_rank": session.LevelRank,
+			"current_xp": session.LevelXP,
 		}, LevelUpRequest
 	}
 
-	if s.session.LevelXP == float64(next_level) {
-		s.session.LevelRank += 1
-		s.session.LevelXP = 0
+	if session.LevelXP == float64(next_level) {
+		session.LevelRank += 1
+		session.LevelXP = 0
 
-		database.SaveSessionState(s.user_id, s.session)
+		database.SaveSessionState(s.user_id, session)
+		database.A.MarkChanged(s.user_id)
+
 		return map[string]interface{}{
-			"current_rank": s.session.LevelRank,
-			"current_xp":   s.session.LevelXP,
-			"next_xp":      database.LevelsXP[s.session.LevelRank + 1],
+			"current_rank": session.LevelRank,
+			"current_xp":   session.LevelXP,
+			"next_xp":      database.LevelsXP[session.LevelRank + 1],
 		}, LevelUpRequest
 	}
 
-	if s.session.LevelXP > float64(next_level) {
-		s.session.LevelXP = math.Round((s.session.LevelXP - float64(next_level)) * 100) / 100
-		s.session.LevelRank += 1
+	if session.LevelXP > float64(next_level) {
+		session.LevelXP = math.Round((session.LevelXP - float64(next_level)) * 100) / 100
+		session.LevelRank += 1
 
-		database.SaveSessionState(s.user_id, s.session)
+		database.SaveSessionState(s.user_id, session)
+		database.A.MarkChanged(s.user_id)
+
 		return map[string]interface{}{
-			"current_rank": s.session.LevelRank,
-			"current_xp":   s.session.LevelXP,
-			"next_xp":      database.LevelsXP[s.session.LevelRank + 1],
+			"current_rank": session.LevelRank,
+			"current_xp":   session.LevelXP,
+			"next_xp":      database.LevelsXP[session.LevelRank + 1],
 		}, LevelUpRequest
 	}
 
-	database.SaveSessionState(s.user_id, s.session)
+	database.SaveSessionState(s.user_id, session)
+	database.A.MarkChanged(s.user_id)
+
 	return map[string]interface{}{
-		"current_rank": s.session.LevelRank,
-		"current_xp":   s.session.LevelXP,
+		"current_rank": session.LevelRank,
+		"current_xp":   session.LevelXP,
 	}, LevelUpRequest
 }
 
 func (s *SessionConn) GetLevel() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
-	if s.session.LevelRank == 100 {
+	session := database.GetSessionState(s.user_id)
+	if session.LevelRank == 100 {
 		return map[string]interface{}{
-			"current_rank": s.session.LevelRank,
-			"current_xp":   s.session.LevelXP,
+			"current_rank": session.LevelRank,
+			"current_xp":   session.LevelXP,
 		}, CheckLevelRequest
 	}
 
 	return map[string]interface{}{
-		"current_rank": s.session.LevelRank,
-		"current_xp":   s.session.LevelXP,
-		"needed_xp":    database.LevelsXP[s.session.LevelRank + 1],
+		"current_rank": session.LevelRank,
+		"current_xp":   session.LevelXP,
+		"needed_xp":    database.LevelsXP[session.LevelRank + 1],
 	}, CheckLevelRequest
 }
 
 func (s *SessionConn) ResetSession() (map[string]interface{}, RequestType) {
-	s.session = database.GetSessionState(s.user_id)
-	if s.session.PrestigeAccumulated < 1 {
+	session := database.GetSessionState(s.user_id)
+	if session.PrestigeAccumulated < 1 {
 		return map[string]interface{}{
 			"message": "not enough prestige points",
 		}, ErrorRequest
 	}
 
-	s.session.PrestigeCurrent += s.session.PrestigeAccumulated
-	s.session.PrestigeBoost += math.Round((1 + 0.05 * s.session.PrestigeCurrent) * 10 ) / 10
+	session.PrestigeCurrent += session.PrestigeAccumulated
+	session.PrestigeBoost += math.Round((1 + 0.05 * session.PrestigeCurrent) * 10 ) / 10
 
-	for i := range s.session.Upgrades {
-		s.session.Upgrades[i] = 0
+	for i := range session.Upgrades {
+		session.Upgrades[i] = 0
 	}
 
-	s.session.Money, s.session.Dishes, s.session.LevelRank, s.session.LevelXP, s.session.PrestigeAccumulated = 0, 0, 0, 0, 0
+	session.Money, session.Dishes, session.LevelRank, session.LevelXP, session.PrestigeAccumulated = 0, 0, 0, 0, 0
 
-	database.SaveSessionState(s.user_id, s.session)
+	database.SaveSessionState(s.user_id, session)
+	database.A.MarkChanged(s.user_id)
+
 	return map[string]interface{}{
 		"message": "success",
 	}, ResetRequest

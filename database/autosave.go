@@ -1,6 +1,7 @@
 package database
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -9,13 +10,13 @@ var update_interval = 5 * time.Second
 
 type AutoSave struct {
     mu        	sync.Mutex
-    changed     map[uint]struct{}
+    changed     map[uint]bool
     done      	chan struct{}
 }
 
 func newAutoSave() *AutoSave {
 	return &AutoSave{
-		changed: make(map[uint]struct{}),
+		changed: make(map[uint]bool),
 		done: make(chan struct{}),
 	}
 }
@@ -43,13 +44,15 @@ func (a *AutoSave) Stop() {
 }
 
 func (a *AutoSave) save() {
+	log.Println("start saving")
+
     a.mu.Lock()
     users := make([]uint, 0, len(a.changed))
     for userID := range a.changed {
         users = append(users, userID)
     }
 
-    a.changed = make(map[uint]struct{})
+    a.changed = make(map[uint]bool)
     a.mu.Unlock()
 
     for _, userID := range users {
@@ -60,6 +63,6 @@ func (a *AutoSave) save() {
 
 func (a *AutoSave) MarkChanged(userID uint) {
     a.mu.Lock()
-    a.changed[userID] = struct{}{}
+    a.changed[userID] = true
     a.mu.Unlock()
 }

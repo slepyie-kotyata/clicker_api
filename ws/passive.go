@@ -70,6 +70,7 @@ func (p *PassiveWorker) updateSessionState(session *models.SessionState, id uint
 	log.Println("done")
 
 	database.SaveSessionState(id, session)
+	database.A.MarkChanged(id)
 
 	data, _ := json.Marshal(map[string]interface{}{
 		"money": session.Money,
