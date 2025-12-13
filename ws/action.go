@@ -232,8 +232,7 @@ func (s *SessionConn) ResetSession() (map[string]interface{}, RequestType) {
 
 	session.Money, session.Dishes, session.LevelRank, session.LevelXP, session.PrestigeAccumulated = 0, 0, 0, 0, 0
 
-	database.SaveSessionState(s.user_id, session)
-	database.A.MarkChanged(s.user_id)
+	database.SaveSession(session)
 
 	return map[string]interface{}{
 		"message": "success",
