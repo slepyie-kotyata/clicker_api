@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var update_interval = 3 * time.Second
+var update_interval = 2 * time.Second
 
 type AutoSave struct {
     mu        	sync.Mutex
