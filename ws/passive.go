@@ -15,6 +15,7 @@ type PassiveWorker struct {
     done chan struct{}
 }
 
+// TODO: сделать пассивку каждую секунду вместо 3х
 var seconds uint = 3
 var P = NewPassiveWorker()
 
@@ -102,6 +103,7 @@ func passiveSellUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		return
 	}
 
+	// TODO: заменить на session.CurrentPrestige
 	prestige_boost := session.PrestigeAccumulated
 
 	if prestige_boost == 0 {
@@ -125,6 +127,7 @@ func passiveCookUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		return
 	}
 
+	// TODO: заменить на session.CurrentPrestige
 	prestige_boost := session.PrestigeAccumulated
 
 	if prestige_boost == 0 {
@@ -147,6 +150,7 @@ func prestigeUpgrade(session *models.SessionState, upgrade_stats service.Upgrade
 
 	service.SetDefaults(&upgrade_stats)
 
+	// TODO: уменьшить в два раза начисление пассивки (вместо деления на 10000 делить на 20000)
 	d := upgrade_stats.MpS * upgrade_stats.MpM
 	p := (d / 10000) * float64(seconds)
 	p = math.Round(p * 10000) / 10000
