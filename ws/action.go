@@ -53,8 +53,8 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 	if session.LevelRank == 100 {
 		xp_increase = 0
 	} else {
-		xp_increase = percent.Percent(1, int(database.LevelsXP[session.LevelRank + 1]))
-		session.LevelXP = math.Round((session.LevelXP + xp_increase + (session.PrestigeCurrent * 0.05)) * 100) / 100
+		xp_increase = percent.Percent(5, int(database.LevelsXP[session.LevelRank + 1]))
+		session.LevelXP = math.Round((session.LevelXP + xp_increase + (session.PrestigeCurrent * 0.1)) * 100) / 100
 	}
 	
 	session.Upgrades[upgrade_id] += 1
