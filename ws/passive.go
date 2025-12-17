@@ -15,13 +15,12 @@ type PassiveWorker struct {
     done chan struct{}
 }
 
-// TODO: сделать пассивку каждую секунду вместо 3х
-var seconds uint = 3
+var seconds uint = 1
 var P = NewPassiveWorker()
 
 func NewPassiveWorker() *PassiveWorker {
     return &PassiveWorker{
-        ticker: time.NewTicker(3 * time.Second),
+        ticker: time.NewTicker(1 * time.Second),
         done: make(chan struct{}),
     }
 }
@@ -103,11 +102,10 @@ func passiveSellUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		return
 	}
 
-	// TODO: заменить на session.CurrentPrestige
-	prestige_boost := session.PrestigeAccumulated
+	prestige := session.PrestigeCurrent
 
-	if prestige_boost == 0 {
-		prestige_boost = 1
+	if prestige == 0 {
+		prestige = 1
 	}
 
 	service.SetDefaults(&upgrade_stats)
@@ -118,7 +116,7 @@ func passiveSellUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		session.LevelXP = math.Round((session.LevelXP + math.Abs(0.05 * float64(seconds) * upgrade_stats.MpS)) * 100) / 100
 	}
 
-	session.Money += uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige_boost * minNum))
+	session.Money += uint(math.Ceil(upgrade_stats.MpS * upgrade_stats.MpM * float64(seconds) * prestige * minNum))
 	session.Dishes -= uint(math.Ceil(minNum))
 }
 
@@ -127,11 +125,10 @@ func passiveCookUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		return
 	}
 
-	// TODO: заменить на session.CurrentPrestige
-	prestige_boost := session.PrestigeAccumulated
+	prestige := session.PrestigeCurrent
 
-	if prestige_boost == 0 {
-		prestige_boost = 1
+	if prestige == 0 {
+		prestige = 1
 	}
 
 	service.SetDefaults(&upgrade_stats)
@@ -140,7 +137,7 @@ func passiveCookUpdate(session *models.SessionState, upgrade_stats service.Upgra
 		session.LevelXP = math.Round((session.LevelXP + math.Abs(0.2 * float64(seconds) * upgrade_stats.DpS)) * 100) / 100
 	}
 
-	session.Dishes += uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige_boost))
+	session.Dishes += uint(math.Ceil(upgrade_stats.DpS * upgrade_stats.DpM * float64(seconds) * prestige))
 }
 
 func prestigeUpgrade(session *models.SessionState, upgrade_stats service.UpgradeStats, seconds uint) {
@@ -150,9 +147,8 @@ func prestigeUpgrade(session *models.SessionState, upgrade_stats service.Upgrade
 
 	service.SetDefaults(&upgrade_stats)
 
-	// TODO: уменьшить в два раза начисление пассивки (вместо деления на 10000 делить на 20000)
 	d := upgrade_stats.MpS * upgrade_stats.MpM
-	p := (d / 10000) * float64(seconds)
+	p := (d / 20000) * float64(seconds)
 	p = math.Round(p * 10000) / 10000
 
 	session.PrestigeAccumulated += p
