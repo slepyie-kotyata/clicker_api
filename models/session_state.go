@@ -2,6 +2,7 @@ package models
 
 type SessionState struct {
     ID        				uint			`json:"id"`
+    UserEmail               string          `json:"user_email"`
     Money     				uint			`json:"money"`
     Dishes    				uint			`json:"dishes"`
     LevelRank 				uint			`json:"level_rank"`

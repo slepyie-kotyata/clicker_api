@@ -190,29 +190,34 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
 		log.Println("session_request")
-		s_bd := database.InitSession(s.user_id)
-		session := database.CreateSessionState(s_bd)
+
+		session := database.GetSessionState(s.user_id)
+		
+		if session == nil {
+			s_bd := database.InitSession(s.user_id)
+			session = database.CreateSessionState(s_bd)
+		}
 		
     	data, _ := json.Marshal(map[string]interface{}{"session": SessionResponse{
-			UserID: s_bd.UserID,
-			UserEmail: s_bd.UserEmail,
-			Money: s_bd.Money,
-			Dishes: s_bd.Dishes,
+			UserID: s.user_id,
+			UserEmail: session.UserEmail,
+			Money: session.Money,
+			Dishes: session.Dishes,
 			Level: struct {
 				Rank uint    `json:"rank"`
 				XP   float64 `json:"xp"`
 			}{
-				Rank: s_bd.Level.Rank,
-				XP:   s_bd.Level.XP,
+				Rank: session.LevelRank,
+				XP:   session.LevelXP,
 			},
 			Prestige: struct {
 				CurrentValue       float64 `json:"current_value"`
 				CurrentBoostValue  float64 `json:"current_boost_value"`
 				AccumulatedValue   float64 `json:"accumulated_value"`
 			}{
-				CurrentValue:      s_bd.Prestige.CurrentValue,
-				CurrentBoostValue: s_bd.Prestige.CurrentBoostValue,
-				AccumulatedValue:  s_bd.Prestige.AccumulatedValue,
+				CurrentValue:      session.PrestigeCurrent,
+				CurrentBoostValue: session.PrestigeBoost,
+				AccumulatedValue:  session.PrestigeAccumulated,
 			},
 			Upgrades: struct {
 				Available []service.FilteredUpgrade `json:"available"`
