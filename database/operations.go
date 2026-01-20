@@ -46,6 +46,7 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 
 	session := models.SessionState{
 		ID: s.ID,
+		UserEmail: s.UserEmail,
 		Money: s.Money,
 		Dishes: s.Dishes,
 		LevelRank: s.Level.Rank,
@@ -80,7 +81,7 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 func SaveSessionState(user_id uint, s *models.SessionState) {
 	data, _ := json.Marshal(s)
 	if err := RClient.Set(ctx, utils.IntToString(int(user_id)), data, 0).Err(); err != nil {
-		panic(err)
+		log.Println("error:", err)
 	}
 }
 
@@ -91,7 +92,8 @@ func GetSessionState(user_id uint) *models.SessionState {
     }
 	
 	if err != nil {
-		panic(err)
+		log.Println("error:", err)
+		return nil
 	}
 
 	var session models.SessionState
@@ -103,7 +105,7 @@ func GetSessionState(user_id uint) *models.SessionState {
 func SetTTL(user_id uint) {
 	_, err := RClient.Expire(ctx, utils.IntToString(int(user_id)), 20 * time.Minute).Result()
 	if err != nil {
-		panic(err)
+		log.Println("error:", err)
 	}
 }
 
