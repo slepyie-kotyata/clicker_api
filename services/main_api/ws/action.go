@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"clicker_api/database"
-	"clicker_api/service"
-	"clicker_api/utils"
+	"clicker_api/pkg/format"
+	"clicker_api/services/main_api/database"
+	"clicker_api/services/main_api/service"
 	"log"
 	"math"
 
@@ -44,7 +44,7 @@ func (s *SessionConn) Buy(id uint) (map[string]interface{}, RequestType) {
 
 	if session.Money < result_price {
 		return map[string]interface{}{
-			"message": "not enough money, you have: " + utils.IntToString(int(session.Money)) + ", you need: " + utils.IntToString(int(result_price)),
+			"message": "not enough money, you have: " + format.IntToString(int(session.Money)) + ", you need: " + format.IntToString(int(result_price)),
 		}, ErrorRequest
 	}
 

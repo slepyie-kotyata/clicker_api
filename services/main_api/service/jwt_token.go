@@ -1,7 +1,7 @@
 package service
 
 import (
-	"clicker_api/secret"
+	"clicker_api/services/main_api/secret"
 	"errors"
 	"strings"
 	"time"

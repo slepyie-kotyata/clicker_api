@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"clicker_api/ws"
+	"clicker_api/services/main_api/ws"
 
 	"github.com/labstack/echo/v4"
 )

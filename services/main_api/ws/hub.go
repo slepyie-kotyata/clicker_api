@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"clicker_api/database"
+	"clicker_api/services/main_api/database"
 	"fmt"
 	"log"
 )

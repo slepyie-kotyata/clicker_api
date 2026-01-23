@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"clicker_api/database"
-	"clicker_api/models"
-	"clicker_api/service"
-	"clicker_api/utils"
+	"clicker_api/pkg/format"
+	"clicker_api/pkg/models"
+	"clicker_api/services/main_api/database"
+	"clicker_api/services/main_api/service"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -22,8 +22,8 @@ func Authentication(c echo.Context) error {
 		})
 	}
 	
-	access_token := service.NewToken(utils.IntToString(int(user.ID)), true)
-	refresh_token := service.NewToken(utils.IntToString(int(user.ID)), false)
+	access_token := service.NewToken(format.IntToString(int(user.ID)), true)
+	refresh_token := service.NewToken(format.IntToString(int(user.ID)), false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,
@@ -61,8 +61,8 @@ func Registrate(c echo.Context) error {
 
 	database.DB.Create(&new_user)
 	
-	access_token := service.NewToken(utils.IntToString(int(new_user.ID)), true)
-	refresh_token := service.NewToken(utils.IntToString(int(new_user.ID)), false)
+	access_token := service.NewToken(format.IntToString(int(new_user.ID)), true)
+	refresh_token := service.NewToken(format.IntToString(int(new_user.ID)), false)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status": 0,

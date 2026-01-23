@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"clicker_api/environment"
-	"clicker_api/service"
+	"clicker_api/services/main_api/environment"
+	"clicker_api/services/main_api/service"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

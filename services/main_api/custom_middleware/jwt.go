@@ -1,8 +1,8 @@
 package custommiddleware
 
 import (
-	"clicker_api/service"
-	"clicker_api/utils"
+	"clicker_api/pkg/format"
+	"clicker_api/services/main_api/service"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,10 +16,9 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 
             fmt.Printf("[JWT] %s %s -> middleware\n", c.Request().Method, c.Path())
 
-            // Ловим preflight (OPTIONS)
             if c.Request().Method == http.MethodOptions {
                 fmt.Println("[JWT] OPTIONS detected → skipping token check & returning 200 for CORS")
-                return c.NoContent(200) // критично! иначе CORS ломается
+                return c.NoContent(200)
             }
 
             header := c.Request().Header.Get("Authorization")
@@ -52,7 +51,7 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
                 })
             }
 
-            uid := utils.StringToUint(service.ExtractIDFromToken(token, secret))
+            uid := format.StringToUint(service.ExtractIDFromToken(token, secret))
             c.Set("id", uid)
             fmt.Printf("[JWT] Token valid. user_id=%d -> forwarding\n", uid)
 

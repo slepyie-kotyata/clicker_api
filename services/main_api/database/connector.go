@@ -1,8 +1,9 @@
 package database
 
 import (
-	"clicker_api/environment"
-	"clicker_api/models"
+	"clicker_api/pkg/models"
+	"clicker_api/services/main_api/environment"
+
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

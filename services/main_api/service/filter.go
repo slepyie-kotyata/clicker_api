@@ -1,8 +1,8 @@
 package service
 
 import (
-	"clicker_api/database"
-	"clicker_api/models"
+	"clicker_api/pkg/models"
+	"clicker_api/services/main_api/database"
 	"sort"
 )
 

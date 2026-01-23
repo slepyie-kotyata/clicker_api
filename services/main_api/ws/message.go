@@ -1,11 +1,11 @@
 package ws
 
 import (
-	"clicker_api/secret"
-	"clicker_api/service"
 	"encoding/json"
 	"errors"
 	"log"
+	"clicker_api/services/main_api/secret"
+	"clicker_api/services/main_api/service"
 )
 
 type MessageType string

@@ -1,10 +1,10 @@
 package ws
 
 import (
-	"clicker_api/database"
-	"clicker_api/secret"
-	"clicker_api/service"
-	"clicker_api/utils"
+	"clicker_api/pkg/format"
+	"clicker_api/services/main_api/database"
+	"clicker_api/services/main_api/secret"
+	"clicker_api/services/main_api/service"
 	"encoding/json"
 	"errors"
 	"log"
@@ -129,7 +129,7 @@ func (s *SessionConn) readPump() {
 			}
 
 			if s.user_id == 0 {
-				s.user_id = utils.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
+				s.user_id = format.StringToUint(service.ExtractIDFromToken(data.Token, secret.Access_secret))
 				H.incoming <- HubEvent{
 					Type:    RegisterConnection,
         			UserID:  s.user_id,

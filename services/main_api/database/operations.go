@@ -1,8 +1,8 @@
 package database
 
 import (
-	"clicker_api/models"
-	"clicker_api/utils"
+	"clicker_api/pkg/models"
+	"clicker_api/pkg/format"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,8 +12,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
-
-//TODO: удаление записи после выхода клиента
 
 var (
 	ctx = context.Background()
@@ -68,7 +66,7 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 
 	fmt.Println(string(data))
 
-	err := RClient.Set(ctx, utils.IntToString(int(s.UserID)), data, 0).Err()
+	err := RClient.Set(ctx, format.IntToString(int(s.UserID)), data, 0).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -80,13 +78,13 @@ func CreateSessionState(s *models.Session) *models.SessionState {
 
 func SaveSessionState(user_id uint, s *models.SessionState) {
 	data, _ := json.Marshal(s)
-	if err := RClient.Set(ctx, utils.IntToString(int(user_id)), data, 0).Err(); err != nil {
+	if err := RClient.Set(ctx, format.IntToString(int(user_id)), data, 0).Err(); err != nil {
 		log.Println("error:", err)
 	}
 }
 
 func GetSessionState(user_id uint) *models.SessionState {
-	result, err := RClient.Get(ctx, utils.IntToString(int(user_id))).Result()
+	result, err := RClient.Get(ctx, format.IntToString(int(user_id))).Result()
 	if err == redis.Nil {
         return nil
     }
@@ -103,7 +101,7 @@ func GetSessionState(user_id uint) *models.SessionState {
 }
 
 func SetTTL(user_id uint) {
-	_, err := RClient.Expire(ctx, utils.IntToString(int(user_id)), 20 * time.Minute).Result()
+	_, err := RClient.Expire(ctx, format.IntToString(int(user_id)), 20 * time.Minute).Result()
 	if err != nil {
 		log.Println("error:", err)
 	}

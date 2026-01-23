@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"clicker_api/database"
-	"clicker_api/models"
-	"clicker_api/service"
+	"clicker_api/pkg/models"
+	"clicker_api/services/main_api/database"
+	"clicker_api/services/main_api/service"
 	"encoding/json"
 	"log"
 	"math"

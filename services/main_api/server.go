@@ -1,11 +1,11 @@
 package main
 
 import (
-	"clicker_api/custom_middleware"
-	"clicker_api/database"
-	"clicker_api/routes"
-	"clicker_api/secret"
-	"clicker_api/ws"
+	custommiddleware "clicker_api/services/main_api/custom_middleware"
+	"clicker_api/services/main_api/database"
+	"clicker_api/services/main_api/routes"
+	"clicker_api/services/main_api/secret"
+	"clicker_api/services/main_api/ws"
 	"context"
 	"log"
 	"net/http"

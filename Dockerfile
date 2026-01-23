@@ -3,7 +3,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o clicker_api server.go
+RUN go build -o /main_api ./services/main_api/server.go
 FROM ubuntu:latest
 WORKDIR /root/
 RUN apt update && apt install -y libc6
