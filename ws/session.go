@@ -189,7 +189,6 @@ func (s *SessionConn) writePump() {
 func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 	switch m.RequestType {
 	case SessionRequest:
-		log.Println("session_request")
 		s_bd := database.InitSession(s.user_id)
 		session := database.CreateSessionState(s_bd)
 		
@@ -235,7 +234,6 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case BuyRequest:
-		log.Println("buy_request")
 		response, r_type := s.Buy(data.Param)
 
 		data, _ := json.Marshal(response)
@@ -252,7 +250,6 @@ func (s *SessionConn) InitAction(m *Message, data *RequestData) {
 			},
 		}
 	case CookRequest:
-		log.Println("cook_request")
 		response, r_type := s.Cook()
 
 		data, _ := json.Marshal(response)
