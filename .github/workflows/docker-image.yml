@@ -25,3 +25,8 @@ jobs:
         tags: |
           son1kx/clicker_api:latest
         platforms: linux/amd64 
+        build-args: |
+          DB_CONNECTION=${{ secrets.DB_CONNECTION }}
+          REDIS_CONNECTION=${{ secrets.REDIS_CONNECTION }}
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
